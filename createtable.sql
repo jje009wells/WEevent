@@ -24,7 +24,7 @@ CREATE TABLE personal_account (
   userid int PRIMARY KEY,
   studentid char(9), 
   foreign key (userid) references account(userid) 
-    on delete restrict
+    on delete cascade
     on update cascade
 )
 ENGINE = InnoDB;
@@ -34,7 +34,7 @@ CREATE TABLE org_account (
   e_board varchar(500),
   orginfo varchar(2000), 
   foreign key (userid) references account(userid) 
-    on delete restrict
+    on delete cascade
     on update cascade
 )
 ENGINE = InnoDB;
@@ -44,10 +44,10 @@ CREATE TABLE person_interest (
   follower int,
   followed int, 
   foreign key (follower) references account(userid) 
-    on delete restrict,
+    on delete cascade,
     on update cascade
   foreign key (follower) references account(userid) 
-    on delete restrict
+    on delete cascade
     on update cascade
 )
 ENGINE = InnoDB;
@@ -69,7 +69,7 @@ CREATE TABLE eventcreated (
   spam varchar(100),
   index(eventid), 
   foreign key (organizerid) references account(userid) 
-    on delete restrict
+    on delete cascade
     on update cascade
 
 )
@@ -79,10 +79,10 @@ CREATE TABLE registration (
   eventid int,
   participant int,
   foreign key (eventid) references eventcreated(eventid) 
-    on delete restrict
+    on delete cascade
     on update cascade,
   foreign key (participant) references account(userid) 
-    on delete restrict
+    on delete cascade
     on update cascade
 )
 ENGINE = InnoDB;
@@ -95,13 +95,13 @@ CREATE TABLE comment (
   commentcontent varchar(1000),
   dateCreated timestamp,
   foreign key (eventid) references eventcreated(eventid) 
-    on delete restrict
+    on delete cascade
     on update cascade,
   foreign key (senderid) references account(userid) 
-    on delete restrict
+    on delete cascade
     on update cascade,
   foreign key (recieverid) references account(userid) 
-    on delete restrict
+    on delete cascade
     on update cascade
 )
 ENGINE = InnoDB;
