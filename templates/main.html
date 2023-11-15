@@ -1,8 +1,46 @@
-{% extends "base.html" %}
-
 {% block main_content %}
-<h1>Hello!</h1>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name=author content="Jennifer Enriquez, Victoria Lu, Jiayi Wu, Yannis Zhu">
+    <meta name=description content="">
+    <meta name=keywords content="">    
+    <title>WEevent</title>
+    <link rel="stylesheet" type="text/css"
+          href="../static/style.css">
+  </head>
+  <body>
+      <!-- database is  -->
+    <div id="navigation">
+      <ul>
+        <li><a href="{{('index')}}">Home</a >
+        <li><a href="{{url_for('create_event')}}">Create an Event</a >
+      </ul>
+    </div>
+    <div id="content">
 
-<p>For a greeting by name, visit this <a href="{{ url_for('greet') }}">greeting</a> page.</p>
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div id="messages">
+        {% for msg in messages %}
+        <p>{{msg}}</p >
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+        </div>
+      
+      
+        <h1>WEevent</h1> #change later
+      
 
+    </div>
+
+    <script src="//code.jquery.com/jquery-3.2.1.min.js"></script>
+    
+    <!-- JS code would go here -->
+    
+  </body>
+</html>
 {% endblock %}
