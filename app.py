@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 import cs304dbi as dbi
 
-import random
+import random, os
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -143,7 +143,8 @@ if __name__ == '__main__':
     else:
         port = os.getuid()
     # set this local variable to 'wmdb' or your personal or team db
-    db_to_use = 'weevent_db' 
+    #db_to_use = 'weevent_db' #team db
+    db_to_use = os.getlogin() + '_db' #personal db
     print('will connect to {}'.format(db_to_use))
     dbi.conf(db_to_use)
     app.debug = True
