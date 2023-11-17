@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 import cs304dbi as dbi
 
-import random, os
+import random, os, helpers
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -23,21 +23,21 @@ def index():
 
 @app.route('/create_event/', methods = ['GET', 'POST'])
 def create_event():
-    
+    conn = dbi.connect()
     if request.method == "GET":
         return render_template("create_event.html", method="POST")
 
     else:
-        event_name = request.form.get("event-name")
-        event_type = request.form.get("event-type")
-        short_description = request.form.get("short-description")
-        start_time = request.form.get("start-time")
-        end_time = request.form.get("end-time")
-        event_location = request.form.get("event-location")
+        event_name = request.form.get("event_name")
+        event_type = request.form.get("event_type")
+        short_description = request.form.get("short_description")
+        start_time = request.form.get("start_time")
+        end_time = request.form.get("end_time")
+        event_location = request.form.get("event_location")
         rsvp = request.form.get("rsvp")
-        event_tag = request.form.get("event-tag")
-        full_description= request.form.get("full-description")
-        contact_email = request.form.get("contact-email")
+        event_tag = request.form.get("event_tag")
+        full_description= request.form.get("full_description")
+        contact_email = request.form.get("contact_email")
         spam = request.form.get("spam")
 
         flag = False
@@ -88,10 +88,22 @@ def create_event():
             flag = True
 
         # if user enter all required inputs
-        if flag == True:
+        if flag == False:
+            ret = helpers.insert_event_data(conn,request.form)
             return redirect(url_for("create_event"))
 
-
+#this will list all events in the database, mainly for our test purposes
+@app.route('/all_events/')
+def all_events():
+    """
+    Renders a page that lists all events in the database, by name
+    Mainly just for testing purposes
+    """
+    conn = dbi.connect()
+    all_events = helpers.get_all_events(conn)
+    return render_template('all_events.html', 
+            page_title='All Events', 
+            data = all_events)
 
 # You will probably not need the routes below, but they are here
 # just in case. Please delete them if you are not using them

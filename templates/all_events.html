@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<h1>All Events</h1>
+
+<ul>
+    {% for event in data %}
+        <li>{{event.eventname}}</li>
+    {% endfor %}
+</ul>
+
+{% endblock %}

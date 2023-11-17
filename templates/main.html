@@ -1,3 +1,4 @@
+{% extends "base.html" %}
 {% block main_content %}
 <!doctype html>
 <html lang="en">
@@ -11,14 +12,15 @@
           href="../static/style.css">
   </head>
   <body>
-      <!-- database is  -->
+      <!-- database is 
     <div id="navigation">
       <ul>
         <li><a href="{{('index')}}">Home</a >
         <li><a href="{{url_for('create_event')}}">Create an Event</a >
+        <li><a href="{{url_for('all_events')}}">List All Events</a >
       </ul>
     </div>
-    <div id="content">
+    <div id="content"> -->
 
       {% with messages = get_flashed_messages() %}
       {% if messages %}

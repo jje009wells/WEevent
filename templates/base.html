@@ -24,9 +24,9 @@
 {% block nav %}
 <nav>
   <ul>
-    <li><a href="{{url_for('index')}}">home</a></li>
-    <li><a href="{{url_for('greet')}}">greet</a></li>
-    <li><a href="{{url_for('testform')}}">testform</a></li>
+    <li><a href="{{('index')}}">Home</a >
+    <li><a href="{{url_for('create_event')}}">Create an Event</a >
+    <li><a href="{{url_for('all_events')}}">List All Events</a >
   </ul>
 </nav>
 {% endblock %}
