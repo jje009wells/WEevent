@@ -43,14 +43,15 @@ def insert_event_data(conn, organizer_id, username, user_email, event_name, even
     return 'Event data inserted' 
 
 def get_all_events(conn):
-    '''
+    """
     This function gets a list of all event names in currently in the eventcreated table.
-    '''
+    """
     curs = dbi.dict_cursor(conn)
     curs.execute(
-        '''
-        select eventname from eventcreated;
-        '''
+        """
+        select eventname, eventid
+        from eventcreated;
+        """
     )
     return curs.fetchall()
 
@@ -122,6 +123,56 @@ def search_events(conn, search_term):
     query = ''' select * from eventcreated where eventname like %s '''
     curs.execute(query, ['%' + search_term + '%'])
     return curs.fetchall()
+
+def update_event(conn, formData, eventID):
+    """
+    Updates event with info gathered from form.
+    Returns the full updated event dictionary
+    """
+    curs = dbi.dict_cursor(conn)
+    #do some error checking first, then proceed with this:
+    curs.execute(# Update movie with new data
+        """
+        update eventcreated
+        set eventname = %s, eventtype = %s, shortdesc = %s,eventdate = %s,starttime = %s,
+            endtime = %s,eventloc = %s,rsvp = %s,eventtag = %s,fulldesc = %s,spam = %s
+        where eventid = %s;
+        """, [formData.get('event_name'), formData.get('event_type'), formData.get('short_desc'),formData.get('event_date'), formData.get('start_time'),
+            formData.get('end_time'), formData.get('event_location'),formData.get('rsvp_required'),formData.get('event_tags'),formData.get('full_desc'),formData.get('event_image'), eventID]
+    )
+    conn.commit()
+    eventDict = event_details(conn,eventID)
+    return eventDict
+
+def event_details(conn, eventID):
+    """
+    Returns a dict with information about a given event based on the eventID
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute( # find the given movie
+        '''
+        select eventid, organizerid, eventname, eventtype, shortdesc,eventdate,starttime,endtime,eventloc,rsvp,eventtag,fulldesc,contactemail,spam
+        from eventcreated
+        where eventid = %s;
+        ''', [eventID]
+    )
+    
+    eventDict = curs.fetchone()  
+    return eventDict
+
+def delete_event(conn, eventID):
+    """
+    Remove event with given id from the database
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        """
+        delete from eventcreated
+        where eventid = %s;
+        """, [eventID]
+    )
+    conn.commit() # Makes the deletion permanent
+
 
 if __name__ == '__main__':
     #database = 'weevent_db' #team db

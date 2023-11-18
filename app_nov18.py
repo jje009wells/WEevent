@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 import cs304dbi as dbi
 
-import random, os, helpers
+import random, os, helpers_nov18
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -118,7 +118,7 @@ def create_event():
 
 
         #*********I changed the parameter passing here because I previously had to modify the tags input
-        helpers.insert_event_data(conn, organizer_id, username, 
+        helpers_nov18.insert_event_data(conn, organizer_id, username, 
                                     user_email, event_name, event_type, 
                                     hort_description, event_date, start_time, 
                                     end_time, event_location, rsvp, event_tags, 
@@ -135,7 +135,7 @@ def all_events():
     Mainly just for testing purposes
     '''
     conn = dbi.connect()
-    all_events = helpers.get_all_events(conn)
+    all_events = helpers_nov18.get_all_events(conn)
     return render_template('all_events.html', 
             page_title='All Events', 
             data = all_events)
@@ -158,12 +158,12 @@ def see_events():
         conn = dbi.connect()
 
         #fetch the events that match the filters via a helper function
-        events = helpers.get_filtered_events(conn, filters)
+        events = helpers_nov18.get_filtered_events(conn, filters)
             
     else:
         #if get request, load all events
         conn = dbi.connect()
-        events = helpers.get_all_events(conn)
+        events = helpers_nov18.get_all_events(conn)
         #replace with jiayi's helper function
 
     return render_template('Homepage.html', events=events) 
@@ -179,13 +179,58 @@ def search_events():
         conn = dbi.connect()
 
         #fetch events whose eventname contain the search term via a helper function
-        events = helpers.search_events(conn, search_term)
+        events = helpers_nov18.search_events(conn, search_term)
 
         return render_template('search_events.html', events=events, search_term=search_term)
         #replace event display html with jiayi's code
     else: 
         return render_template('search_events.html')
         #replace event display htmlwith jiayi's code
+
+
+@app.route('/update/<int:eventID>', methods=['GET','POST'])
+def update(eventID):
+    '''
+    Shows a form for updating a particular event, with the eventID of the event in the URL on GET
+    On POST does the update and shows the form again.
+    '''
+    conn = dbi.connect()
+
+    if request.method == 'POST':
+        #if updating the form
+        if request.form.get('submit') == 'update': # if updating the form, check values
+            #turn list of tags into 1 str for easy passing
+            event_tags_list = request.form.getlist("event_tags")
+            if event_tags_list: 
+                event_tags = ','.join(event_tags_list)
+            else: 
+                event_tags = 'None'
+            eventDictToPass = request.form.to_dict()            
+            eventDictToPass['event_tags'] = event_tags
+
+            eventDict = helpers_nov18.update_event(conn, eventDictToPass, eventID)
+           
+        #if deleting the form
+        elif request.form.get('submit') == 'delete': # find event with this ID and delete the event
+            eventDict = helpers_nov18.event_details(conn, eventID)
+            helpers_nov18.delete_event(conn, eventID)
+            flash(f"Event ({eventDict.get('eventname')}) was deleted successfully")
+            return redirect(url_for('index'))
+        else: #Shouldn't get here
+            flash(f"ERROR: neither update or delete")
+        #if the POST is a delete, will return a redirect to the home page for now
+    elif request.method == 'GET':
+    #either way, the return will be an update page for the event
+        eventDict = helpers_nov18.event_details(conn, eventID)
+        event_tags = eventDict.get("eventtag")
+        if eventDict == None: #Shouldn't happen
+            flash('Error: eventDict is empty with this eventID')
+            return redirect(url_for('index'))
+    return render_template('update_event.html', page_title='Fill in Missing Data', eventDict = eventDict, event_tags = event_tags)
+
+
+
+
 
 @app.route('/greet/', methods=["GET", "POST"])
 def greet():
