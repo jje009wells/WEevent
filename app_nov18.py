@@ -166,7 +166,7 @@ def see_events():
         events = helpers.get_all_events(conn)
         #replace with jiayi's helper function
 
-    return render_template('see_events.html', events=events) 
+    return render_template('Homepage.html', events=events) 
     #replace the second part of the html code with jiayi's html
 
 @app.route('/search_events/', methods=['GET', 'POST'])
