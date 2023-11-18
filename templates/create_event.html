@@ -8,8 +8,8 @@
     <link rel="stylesheet" type="text/css" href="/../static/style.css">
   </head>
   <body>
-    <div id="navigation">
-      <!-- Navigation links -->
+    <!--*********I don't think we need this since it's already in the base-->
+    <!-- <div id="navigation">
     </div>
     <div id="main">
       {% with messages = get_flashed_messages() %}
@@ -20,7 +20,7 @@
             {% endfor %}
           </div>
         {% endif %}
-      {% endwith %}
+      {% endwith %} -->
 
     <div id="content">
       <h1>Create Event</h1>
@@ -31,36 +31,67 @@
             <td><label for="organizer_id">Organizer ID</label></td>
             <td><input id="organizer_id" name="organizer_id" required></td>
           </tr>
+
+          <tr>
+            <td><label for="username">Username</label></td>
+            <td><input type="text" id="username" name="username" required></td>
+          </tr>
+          
+          <tr>
+            <td><label for="user_email">User Email</label></td>
+            <td><input type="email" id="user_email" name="user_email" required></td>
+          </tr>
+    
           <tr>
             <td><label for="event_name">Event Name</label></td>
             <td><input id="event_name" name="event_name" required></td>
           </tr>
+
           <tr>
             <td><label for="event_type">Event Type</label></td>
             <td>
-              <select id="event_type" name="event_type">
+              <select id="event_type" name="event_type" required>
                 <option value="">Select Type</option>
                 <option value="personal">Personal</option>
                 <option value="org">Organization</option>
               </select>
             </td>
           </tr>
+
           <tr>
             <td><label for="short_desc">Short Description</label></td>
             <td><textarea id="short_desc" name="short_desc" required></textarea></td>
           </tr>
+
           <tr>
+            <td><label for="event_date">Event Date</label></td>
+            <td><input type="date" id="event_date" name="event_date" required></td>
+          </tr>
+
+          <tr>
+            <td><label for="start_time">Start Time</label></td>
+            <td><input type="time" id="start_time" name="start_time" required></td>
+          </tr>
+
+          <tr>
+            <td><label for="end_time">End Time</label></td>
+            <td><input type="time" id="end_time" name="end_time" required></td>
+          </tr>
+
+          <!-- <tr>
             <td><label for="start_time">Start Time</label></td>
             <td><input type="datetime-local" id="start_time" name="start_time" required></td>
           </tr>
           <tr>
             <td><label for="end_time">End Time</label></td>
             <td><input type="datetime-local" id="end_time" name="end_time" required></td>
-          </tr>
+          </tr> -->
+
           <tr>
             <td><label for="event_location">Location</label></td>
             <td><input id="event_location" name="event_location" required></td>
           </tr>
+
           <tr>
             <td><label for="rsvp_required">RSVP Required</label></td>
             <td>
@@ -70,32 +101,37 @@
               </select>
             </td>
           </tr>
+
           <tr>
             <td><label for="full_desc">Full Description</label></td>
             <td><textarea id="full_desc" name="full_desc" required></textarea></td>
           </tr>
+
           <tr>
             <td><label for="contact_email">Contact Email</label></td>
             <td><input type="email" id="contact_email" name="contact_email" required></td>
           </tr>
+
           <tr>
             <td><label for="event_tags">Event Tags (Optional)</label></td>
             <td>
-              <select multiple id="event_tags" name="event_tags">
-                <option value="academic">Academic</option>
-                <option value="sport">Sport</option>
-                <option value="cultural">Cultural</option>
-                <option value="religious">Religious</option>
-                <option value="volunteering">Volunteering</option>
-                <option value="career">Career</option>
-                <option value="other">Other</option>
-              </select>
-            </td>
+              <div id="tag-checkboxes">
+                  <label><input type="checkbox" name="event_tags" value="academic"> Academic</label>
+                  <label><input type="checkbox" name="event_tags" value="sport"> Sport</label>
+                  <label><input type="checkbox" name="event_tags" value="cultural"> Cultural</label>
+                  <label><input type="checkbox" name="event_tags" value="religious"> Religious</label>
+                  <label><input type="checkbox" name="event_tags" value="volunteering"> Volunteering</label>
+                  <label><input type="checkbox" name="event_tags" value="career"> Career</label>
+                  <label><input type="checkbox" name="event_tags" value="other"> Other</label>
+              </div>
+          </td>
           </tr>
+
           <tr>
             <td><label for="event_image">Upload Image (Spam - Optional)</label></td>
             <td><input type="file" id="event_image" name="event_image"></td>
           </tr>
+
         </table>
         <input type="submit" value="Create Event">
       </form>
