@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+  <div class="event-details-container">
+    <h1>{{ event.eventname }}</h1>
+    <p><strong>Date:</strong> {{ event.eventdate.strftime('%B %d, %Y') }}</p>
+    <p><strong>Time:</strong> From {{ event.starttime.strftime('%H:%M') }} to {{ event.endtime.strftime('%H:%M') }}</p>
+    <p><strong>Location:</strong> {{ event.eventloc }}</p>
+    <p><strong>Description:</strong> {{ event.fulldesc }}</p>
+    <p><strong>Contact Email:</strong> <a href="mailto:{{ event.contactemail }}">{{ event.contactemail }}</a></p>
+    <p><strong>RSVP:</strong> {{ 'Required' if event.rsvp == 'yes' else 'Not Required' }}</p>
+    <p><strong>Tags:</strong> {{ event.eventtag }}</p>
+    <!-- Add any additional details you'd like to include here -->
+  </div>
+{% endblock %}
