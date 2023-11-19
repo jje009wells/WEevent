@@ -102,6 +102,12 @@
                   <label><input type="checkbox" name="event_tags" value="cultural"> Cultural</label>
                 {% endif %}
 
+                {% if 'religious' in event_tags %}
+                <label><input type="checkbox" name="event_tags" value="religious" checked> Religious</label>
+                {% else %}
+                  <label><input type="checkbox" name="event_tags" value="religious"> Religious</label>
+                {% endif %}
+
                 {% if 'volunteering' in event_tags %}
                   <label><input type="checkbox" name="event_tags" value="volunteering" checked> Volunteering</label>
                 {% else %}
