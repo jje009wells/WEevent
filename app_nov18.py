@@ -140,6 +140,16 @@ def all_events():
             page_title='All Events', 
             data = all_events)
 
+@app.route('/event/<int:event_id>/')
+def event(event_id):
+    conn = dbi.connect()
+    event = helpers.get_event_by_id(conn, event_id)  # Assuming you have a helper function to get event details
+    if event:
+        return render_template('event_detail.html', event=event)
+    else:
+        flash('Event not found.')
+        return redirect(url_for('index'))
+
 @app.route('/see_events/', methods=['GET', 'POST'])
 def see_events():
     '''
