@@ -160,6 +160,18 @@ def event_details(conn, eventID):
     eventDict = curs.fetchone()  
     return eventDict
 
+def get_event_by_id(conn, event_id):
+    '''
+    This function retrieves the details of a specific event by its event_id.
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''
+        SELECT * FROM eventcreated WHERE eventid = %s;
+        ''', [event_id]
+    )
+    return curs.fetchone()  # Returns a single event object or None if not found
+
 def delete_event(conn, eventID):
     """
     Remove event with given id from the database
