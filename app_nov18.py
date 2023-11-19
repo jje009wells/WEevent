@@ -120,7 +120,7 @@ def create_event():
         #*********I changed the parameter passing here because I previously had to modify the tags input
         helpers_nov18.insert_event_data(conn, organizer_id, username, 
                                     user_email, event_name, event_type, 
-                                    hort_description, event_date, start_time, 
+                                    short_description, event_date, start_time, 
                                     end_time, event_location, rsvp, event_tags, 
                                     full_description, contact_email, spam)
         #ret = helpers.insert_event_data(conn,request.form)
@@ -128,22 +128,33 @@ def create_event():
         return redirect(url_for("create_event"))
 
 
-@app.route('/all_events/')
-def all_events():
+@app.route('/Homepage/')
+def Homepage():
     '''
-    Renders a page that lists all events in the database, by name
-    Mainly just for testing purposes
+    Renders a page that lists all events in the database
     '''
     conn = dbi.connect()
-    all_events = helpers_nov18.get_all_events(conn)
-    return render_template('all_events.html', 
-            page_title='All Events', 
-            data = all_events)
+    events= helpers_nov18.get_homepage_events(conn)
+    print(events)
+    return render_template('Homepage.html', 
+            events = events)
+
+# @app.route('/all_events/')
+# def all_events():
+#     '''
+#     Renders a page that lists all events in the database, by name
+#     Mainly just for testing purposes
+#     '''
+#     conn = dbi.connect()
+#     all_events = helpers_nov18.get_all_events(conn)
+#     return render_template('all_events.html', 
+#             page_title='All Events', 
+#             data = all_events)
 
 @app.route('/event/<int:event_id>/')
 def event(event_id):
     conn = dbi.connect()
-    event = helpers.get_event_by_id(conn, event_id)  # Assuming you have a helper function to get event details
+    event = helpers_nov18.get_event_by_id(conn, event_id)  # Assuming you have a helper function to get event details
     if event:
         return render_template('event_detail.html', event=event)
     else:
@@ -176,7 +187,7 @@ def see_events():
         events = helpers_nov18.get_all_events(conn)
         #replace with jiayi's helper function
 
-    return render_template('Homepage.html', events=events) 
+    return render_template('see_events.html', events=events) 
     #replace the second part of the html code with jiayi's html
 
 @app.route('/search_events/', methods=['GET', 'POST'])
@@ -218,6 +229,7 @@ def update(eventID):
             eventDictToPass = request.form.to_dict()            
             eventDictToPass['event_tags'] = event_tags
 
+            flash(f"Event updated successfully.")
             eventDict = helpers_nov18.update_event(conn, eventDictToPass, eventID)
            
         #if deleting the form
@@ -237,10 +249,6 @@ def update(eventID):
             flash('Error: eventDict is empty with this eventID')
             return redirect(url_for('index'))
     return render_template('update_event.html', page_title='Fill in Missing Data', eventDict = eventDict, event_tags = event_tags)
-
-
-
-
 
 @app.route('/greet/', methods=["GET", "POST"])
 def greet():

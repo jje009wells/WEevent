@@ -55,6 +55,31 @@ def get_all_events(conn):
     )
     return curs.fetchall()
 
+def get_homepage_events(conn):
+    '''
+    This function gets a list of all event names in currently in the eventcreated table.
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''
+        select * from eventcreated;
+        '''
+    )
+    return curs.fetchall()
+
+def get_event_by_id(conn, event_id):
+    '''
+    This function retrieves the details of a specific event by its event_id.
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''
+        SELECT * FROM eventcreated WHERE eventid = %s;
+        ''', [event_id]
+    )
+    return curs.fetchone()  # Returns a single event object or None if not found
+
+
 def get_filtered_events(conn, filters):
     curs = dbi.dict_cursor(conn)
 
