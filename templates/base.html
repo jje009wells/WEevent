@@ -25,11 +25,11 @@
 {% block nav %}
 <nav>
   <ul>
-    <li><a href="{{('index')}}">Home</a >
-    <li><a href="{{url_for('create_event')}}">Create an Event</a >
-    <li><a href="{{url_for('all_events')}}">List All Event for Updating</a >
-    <li><a href="{{url_for('see_events')}}">Filter Events</a >
-    <li><a href="{{url_for('search_events')}}">Search Events</a >
+    <li><a href="{{ url_for('index') }}">Home</a></li>
+    <li><a href="{{ url_for('create_event') }}">Create an Event</a></li>
+    <li><a href="{{ url_for('all_events') }}">List All Events</a></li>
+    <li><a href="{{ url_for('see_events') }}">Filter Events</a></li>
+    <li><a href="{{ url_for('search_events') }}">Search Events</a></li>
   </ul>
 </nav>
 {% endblock %}
