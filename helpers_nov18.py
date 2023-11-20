@@ -226,5 +226,3 @@ if __name__ == '__main__':
     database = os.getlogin() + '_db'
     dbi.conf(database)
     conn = dbi.connect()
-
-    

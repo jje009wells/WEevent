@@ -15,6 +15,10 @@ app.secret_key = ''.join([ random.choice(('ABCDEFGHIJKLMNOPQRSTUVXYZ' +
                                           '0123456789'))
                            for i in range(20) ])
 
+# new for file upload
+app.config['UPLOADS'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 1*1024*1024 # 1 MB
+
 # This gets us better error messages for certain common request errors
 app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 
@@ -22,6 +26,10 @@ app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 def index():
     return render_template('main.html',title='Hello')
 
+
+@app.route('/uploads/<filename>/')
+def uploads(filename):
+    return send_from_directory(app.config['UPLOADS'], filename) 
 
 @app.route('/create_event/', methods = ['GET', 'POST'])
 def create_event():
@@ -54,7 +62,7 @@ def create_event():
         rsvp = request.form.get("rsvp_required")
         full_description= request.form.get("full_desc")
         contact_email = request.form.get("contact_email")
-        spam = request.form.get("spam")
+        #spam = request.form.get("event_image")
         
         #get the tags as a list
         #but when we insert this field into the table, we want it as a string with each tag 
@@ -64,105 +72,79 @@ def create_event():
             event_tags = ','.join(event_tags_list)
         else: 
             event_tags = None
-
-        #????????? I'm a little confused by why we need the flag and flashing here, 
-        #if we enforce that a field is required, the form cannot be submitted if it's just an empty string
-        # flag = False
-        # # if missing event name 
-        # if event_name == "":
-        #     flash("Please enter event name")
-        #     flag = True
-
-        # # if missing event type 
-        # if event_type == "":
-        #     flash("Please enter event type")
-        #     flag = True
         
-        # # if missing short description 
-        # if short_description == "":
-        #     flash("Please enter short description")
-        #     flag = True
-
-        # # if missing start time
-        # if start_time == "":
-        #     flash("Please enter start time")
-        #     flag = True
-
-        # # if missing end time
-        # if end_time == "":
-        #     flash("Please enter end time")
-        #     flag = True
-
-        # # if missing event location 
-        # if event_location == "":
-        #     flash("Please enter event location")
-        #     flag = True
-        
-        # # if missing rsvp information 
-        # if rsvp == "":
-        #     flash("Please enter rsvp information")
-        #     flag = True
-
-        # # if missing full_description 
-        # if full_description == "":
-        #     flash("Please enter full description")
-        #     flag = True
-
-        # # if missing contact email 
-        # if contact_email == "":
-        #     flash("Please enter contact email")
-        #     flag = True
-
-        # # if user enter all required inputs
-        # if flag == False:
-
+        # Handle file upload for 'spam'
+        f = request.files['event_image']
+        if f: 
+            try:
+                nm = int(organizer_id) # may throw error
+                user_filename = f.filename
+                ext = user_filename.split('.')[-1]
+                filename = secure_filename('{}.{}'.format(nm,ext))
+                pathname = os.path.join(app.config['UPLOADS'],filename)
+                f.save(pathname)
+                flash('Upload successful')
+            except Exception as err:
+                flash('Upload failed {why}'.format(why=err))
+                return render_template('create_event.html')
+        else: 
+            pathname = None
 
         #*********I changed the parameter passing here because I previously had to modify the tags input
         helpers_nov18.insert_event_data(conn, organizer_id, username, 
                                     user_email, event_name, event_type, 
                                     short_description, event_date, start_time, 
                                     end_time, event_location, rsvp, event_tags, 
-                                    full_description, contact_email, spam)
+                                    full_description, contact_email, pathname)
         #ret = helpers.insert_event_data(conn,request.form)
         flash("Event successfully created.")
         return redirect(url_for("create_event"))
 
 
-@app.route('/Homepage/')
-def Homepage():
+@app.route('/all_events/')
+def all_events():
     '''
     Renders a page that lists all events in the database
     '''
     conn = dbi.connect()
     events= helpers_nov18.get_homepage_events(conn)
-    print(events)
-    return render_template('Homepage.html', 
+    return render_template('all_events.html', 
             events = events)
 
-# @app.route('/all_events/')
-# def all_events():
-#     '''
-#     Renders a page that lists all events in the database, by name
-#     Mainly just for testing purposes
-#     '''
-#     conn = dbi.connect()
-#     all_events = helpers_nov18.get_all_events(conn)
-#     return render_template('all_events.html', 
-#             page_title='All Events', 
-#             data = all_events)
+@app.route('/all_events_managed/', methods=['GET', 'POST'])
+def all_events_managed():
+    '''
+    Renders a page that lists all events in the database, by name
+    Mainly just for testing purposes
+    '''
+    if request.method == 'POST':
+        userid = request.form.get('userid')
+        conn = dbi.connect()
+        events = helpers_nov18.get_events_by_user(conn, userid)
+
+        if events:
+            return render_template('all_events_managed.html', page_title='All Events', data=events)
+        else:
+            flash('You have not created any events.')
+            return redirect(url_for('all_events_managed'))
+    else: 
+        return render_template('input_user_id.html') 
 
 @app.route('/event/<int:event_id>/')
 def event(event_id):
     conn = dbi.connect()
     event = helpers_nov18.get_event_by_id(conn, event_id)  # Assuming you have a helper function to get event details
+    
+
     if event:
-        return render_template('event_detail.html', event=event)
+        filename = event['spam'].split('/')[-1]
+        return render_template('event_detail.html', event=event, filename = filename)
     else:
         flash('Event not found.')
         return redirect(url_for('index'))
 
-@app.route('/see_events/', methods=['GET', 'POST'])
-def see_events():
+@app.route('/filter_events/', methods=['GET', 'POST'])
+def filter_events():
     '''
     This handler function renders a page that displays all events 
     or certain events matching a filter
@@ -180,15 +162,15 @@ def see_events():
 
         #fetch the events that match the filters via a helper function
         events = helpers_nov18.get_filtered_events(conn, filters)
+        return render_template('filter_events.html', events=events, filters=filters)
+
             
     else:
         #if get request, load all events
         conn = dbi.connect()
-        events = helpers_nov18.get_all_events(conn)
+        events = helpers_nov18.get_homepage_events(conn)
         #replace with jiayi's helper function
-
-    return render_template('see_events.html', events=events) 
-    #replace the second part of the html code with jiayi's html
+        return render_template('filter_events.html', events=events, filters={}) 
 
 @app.route('/search_events/', methods=['GET', 'POST'])
 def search_events():
@@ -205,7 +187,10 @@ def search_events():
         return render_template('search_events.html', events=events, search_term=search_term)
         #replace event display html with jiayi's code
     else: 
-        return render_template('search_events.html')
+        conn = dbi.connect()
+        events = helpers_nov18.get_homepage_events(conn)
+
+        return render_template('search_events.html', events=events, search_term="")
         #replace event display htmlwith jiayi's code
 
 
@@ -250,44 +235,6 @@ def update(eventID):
             return redirect(url_for('index'))
     return render_template('update_event.html', page_title='Fill in Missing Data', eventDict = eventDict, event_tags = event_tags)
 
-@app.route('/greet/', methods=["GET", "POST"])
-def greet():
-    if request.method == 'GET':
-        return render_template('greet.html', title='Customized Greeting')
-    else:
-        try:
-            username = request.form['username'] # throws error if there's trouble
-            flash('form submission successful')
-            return render_template('greet.html',
-                                   title='Welcome '+username,
-                                   name=username)
-
-        except Exception as err:
-            flash('form submission error'+str(err))
-            return redirect( url_for('index') )
-
-@app.route('/formecho/', methods=['GET','POST'])
-def formecho():
-    if request.method == 'GET':
-        return render_template('form_data.html',
-                               method=request.method,
-                               form_data=request.args)
-    elif request.method == 'POST':
-        return render_template('form_data.html',
-                               method=request.method,
-                               form_data=request.form)
-    else:
-        # maybe PUT?
-        return render_template('form_data.html',
-                               method=request.method,
-                               form_data={})
-
-@app.route('/testform/')
-def testform():
-    # these forms go to the formecho route
-    return render_template('testform.html')
-
-
 if __name__ == '__main__':
     import sys, os
     if len(sys.argv) > 1:
@@ -304,3 +251,4 @@ if __name__ == '__main__':
     dbi.conf(db_to_use)
     app.debug = True
     app.run('0.0.0.0',port)
+
