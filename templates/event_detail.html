@@ -10,6 +10,12 @@
     <p><strong>Contact Email:</strong> <a href="mailto:{{ event.contactemail }}">{{ event.contactemail }}</a></p>
     <p><strong>RSVP:</strong> {{ 'Required' if event.rsvp == 'yes' else 'Not Required' }}</p>
     <p><strong>Tags:</strong> {{ event.eventtag }}</p>
-    <!-- Add any additional details you'd like to include here -->
+    
+    {% if filename %}
+
+      <img src="{{ url_for('uploads', filename=filename) }}" alt="Event Image">
+    {% endif %}
+
+
   </div>
 {% endblock %}

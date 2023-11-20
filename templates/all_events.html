@@ -1,12 +1,19 @@
 {% extends "base.html" %}
 
 {% block main_content %}
-<h1>All Events (Click to update event)</h1>
-
-<ul>
-    {% for event in data %}
-        <li><a href="{{url_for('update', eventID=event.eventid)}}">{{event.eventname}}</li>
+<body>
+  <h1>Upcoming Events</h1>
+  <ul class="event-list">
+    {% for event in events %}
+    <li>
+      <strong>{{ event.eventname }}</strong><br>
+      Location: {{ event.eventloc }}<br>
+      Description: {{ event.fulldesc }}<br>
+      Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
+      <a href="/event/{{ event.eventid }}">Click for details</a>
+    </li>
     {% endfor %}
-</ul>
-
+  </ul>
+</body>
+</html>
 {% endblock %}

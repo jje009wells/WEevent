@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<h1>All Events (Click to update event)</h1>
+
+<ul>
+    {% for event in data %}
+        <li><a href="{{url_for('update', eventID=event.eventid)}}">{{event.eventname}}</li>
+    {% endfor %}
+</ul>
+
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<h1>Filter Events</h1>
+
+<div id="filter-bar">
+    <form method="POST" action="{{ url_for('filter_events') }}">
+      <label for="date">Date:</label>
+      <input type="date" id="date" name="date" value="{{ filters.date }}">
+
+      <label for="type">Type:</label>
+      <select id="type" name="type">
+        <option value="">Select Type</option>
+        <option value="personal">Personal</option>
+        <option value="org">Organization</option>
+      </select>
+
+      <label for="org_name">Org Name:</label>
+      <input type="text" id="org_name" name="org_name" value="{{ filters.org_name }}">
+
+      <label for="event_tags">Event Tags (Optional)</label>
+        <div id="tag-checkboxes">
+            <label><input type="checkbox" name="event_tags" value="academic"{% if 'academic' in filters.tags %}checked{% endif %}> Academic</label>
+            <label><input type="checkbox" name="event_tags" value="sport"{% if 'sport' in filters.tags %}checked{% endif %}> Sport</label>
+            <label><input type="checkbox" name="event_tags" value="cultural"{% if 'cultural' in filters.tags %}checked{% endif %}> Cultural</label>
+            <label><input type="checkbox" name="event_tags" value="religious"{% if 'religious' in filters.tags %}checked{% endif %}> Religious</label>
+            <label><input type="checkbox" name="event_tags" value="volunteering"{% if 'volunteering' in filters.tags %}checked{% endif %}> Volunteering</label>
+            <label><input type="checkbox" name="event_tags" value="career"{% if 'career' in filters.tags %}checked{% endif %}> Career</label>
+            <label><input type="checkbox" name="event_tags" value="other"{% if 'ither' in filters.tags %}checked{% endif %}> Other</label>
+        </div>
+        
+      <input type="submit" value="Filter">
+    </form>
+  </div>
+
+  <!--This is for displaying the events that match the filters-->
+  <div id="event-list">
+    <ul>
+      {% for event in events %}
+      <li>
+        <strong>{{ event.eventname }}</strong><br>
+        Location: {{ event.eventloc }}<br>
+        Description: {{ event.fulldesc }}<br>
+        Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
+        <a href="/event/{{ event.eventid }}">Click for details</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+{% endblock %}

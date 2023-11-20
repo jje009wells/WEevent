@@ -3,7 +3,7 @@ from flask import flash
 import cs304dbi as dbi
 import os
 
-def insert_event_data(conn, organizer_id, username, user_email, event_name, event_type, short_description, event_date, start_time, end_time, event_location, rsvp, event_tags, full_description, contact_email, spam):
+def insert_event_data(conn, organizer_id, username, user_email, event_name, event_type, short_description, event_date, start_time, end_time, event_location, rsvp, event_tags, full_description, contact_email, pathname):
     curs = dbi.dict_cursor(conn)
     '''
     This helper function inserts event information into the database
@@ -36,9 +36,8 @@ def insert_event_data(conn, organizer_id, username, user_email, event_name, even
         values (%s, %s, %s,%s, %s, %s,%s, %s, %s,%s, %s, %s, %s);
         ''', [organizer_id, event_name, event_type, short_description,
             event_date, start_time, end_time, event_location,
-            rsvp, event_tags, full_description, contact_email, spam]
+            rsvp, event_tags, full_description, contact_email, pathname]
     )
-
     conn.commit() # Makes the change permanent
     return 'Event data inserted' 
 
@@ -52,6 +51,17 @@ def get_all_events(conn):
         select eventname, eventid
         from eventcreated;
         """
+    )
+    return curs.fetchall()
+
+def get_events_by_user(conn, userid):
+    """
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        """
+        select * from eventcreated where organizerid = %s;
+        """, [userid]
     )
     return curs.fetchall()
 
