@@ -2,7 +2,8 @@
 
 {% block main_content %}
 <body>
-  <h1>Upcoming Events</h1>
+  <!--Displays all events with important information and link to view more details -->
+  <h1>All Events</h1>
   <ul class="event-list">
     {% for event in events %}
     <li>
@@ -10,6 +11,9 @@
       Location: {{ event.eventloc }}<br>
       Description: {{ event.fulldesc }}<br>
       Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
+      Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
+      Type: {{ event.eventtype }} <br>
+      Tags: {{ event.eventtag }} <br>
       <a href="/event/{{ event.eventid }}">Click for details</a>
     </li>
     {% endfor %}

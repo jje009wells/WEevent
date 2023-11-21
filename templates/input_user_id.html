@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block main_content %}
-    <h1>Enter Your User ID</h1>
+    <h1>Please enter Your User ID</h1>
     <form method="POST" action="{{ url_for('all_events_managed') }}">
         <label for="userid">User ID:</label>
         <input type="text" id="userid" name="userid" required>

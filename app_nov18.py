@@ -1,7 +1,10 @@
+# @authors: Jen Enriquez, Victoria Lu, Jiayi Wu, Yannis Zhu
+
 from flask import (Flask, render_template, make_response, url_for, request,
                    redirect, flash, session, send_from_directory, jsonify)
 from werkzeug.utils import secure_filename
 from datetime import datetime
+import time
 app = Flask(__name__)
 
 import cs304dbi as dbi
@@ -24,18 +27,22 @@ app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 
 @app.route('/')
 def index():
+    '''
+    Renders the homepage 
+    '''
     return render_template('main.html',title='Hello')
-
 
 @app.route('/uploads/<filename>/')
 def uploads(filename):
+    '''
+    This handler function sends spam to the browser
+    '''
     return send_from_directory(app.config['UPLOADS'], filename) 
 
 @app.route('/create_event/', methods = ['GET', 'POST'])
 def create_event():
     '''
-    This handler function is for creating an event (event information collection
-    and data insertion into tables)
+    Renders the event creation form and handles data insertion
     '''
     conn = dbi.connect()
     if request.method == "GET":
@@ -73,37 +80,36 @@ def create_event():
         else: 
             event_tags = None
         
-        # don't want to upload until we can confirm that the event was actually created
-        # also need to use eventid as the name for the file
-        # so will first create the event, then pass the event image filename to be uploaded via a separate function
-        
+        #first insert the event without the spam 
+        #helpers_nov18.insert_event_data returns the event_id of the newly inserted event
+        event_id = helpers_nov18.insert_event_data(conn, organizer_id, username, 
+                                    user_email, event_name, event_type, 
+                                    short_description, event_date, start_time, 
+                                    end_time, event_location, rsvp, event_tags, 
+                                    full_description, contact_email, None)
 
+        #if spam was uploaded, upload it to the uploads folder with a unique name
+        f = request.files['event_image']
+        if f: 
+            try:
+                nm = int(organizer_id) # may throw error
+                user_filename = f.filename
+                ext = user_filename.split('.')[-1]
+                timestamp = int(time.time()) 
+                filename = secure_filename('{}_{}.{}'.format(nm,timestamp,ext))
+                pathname = os.path.join(app.config['UPLOADS'],filename)
+                f.save(pathname)
+                flash('Upload successful')
+            except Exception as err:
+                flash('Upload failed {why}'.format(why=err))
+                return render_template('create_event.html')
+        else: 
+            pathname = None
 
-        # # OLD VERS:
-        # # Handle file upload for 'spam'
-        # f = request.files['event_image']
-        # if f: 
-        #     try:
-        #         nm = int(organizer_id) # may throw error
-        #         user_filename = f.filename
-        #         ext = user_filename.split('.')[-1]
-        #         filename = secure_filename('{}.{}'.format(nm,ext))
-        #         pathname = os.path.join(app.config['UPLOADS'],filename)
-        #         f.save(pathname)
-        #         flash('Upload successful')
-        #     except Exception as err:
-        #         flash('Upload failed {why}'.format(why=err))
-        #         return render_template('create_event.html')
-        # else: 
-        #     pathname = None
-
-        # #*********I changed the parameter passing here because I previously had to modify the tags input
-        # helpers_nov18.insert_event_data(conn, organizer_id, username, 
-        #                             user_email, event_name, event_type, 
-        #                             short_description, event_date, start_time, 
-        #                             end_time, event_location, rsvp, event_tags, 
-        #                             full_description, contact_email, pathname)
-        # #ret = helpers.insert_event_data(conn,request.form)
+        #finally, insert the path for the spam
+        #want to do this separately at the end so that spam is not uploaded if 
+        #an event does not end up being created
+        helpers_nov18.insert_event_image(conn, event_id, pathname)
         flash("Event successfully created.")
         return redirect(url_for("create_event"))
 
@@ -111,7 +117,7 @@ def create_event():
 @app.route('/all_events/')
 def all_events():
     '''
-    Renders a page that lists all events in the database
+    Renders a page that displays all events in the database with the most important info
     '''
     conn = dbi.connect()
     events= helpers_nov18.get_homepage_events(conn)
@@ -121,12 +127,16 @@ def all_events():
 @app.route('/all_events_managed/', methods=['GET', 'POST'])
 def all_events_managed():
     '''
-    Renders a page that lists all events in the database, by name
-    Mainly just for testing purposes
+    Renders a page that given an organizerid, displays the event names of 
+    all events created by that organizer
     '''
     if request.method == 'POST':
         userid = request.form.get('userid')
         conn = dbi.connect()
+
+        #get events created by a certain user
+        #want to enforce that only the organizer can manage (update/delete) events
+        #will modify this code after addinging in login functionality
         events = helpers_nov18.get_events_by_user(conn, userid)
 
         if events:
@@ -134,21 +144,28 @@ def all_events_managed():
         else:
             flash('You have not created any events.')
             return redirect(url_for('all_events_managed'))
+    
+    #if get request, ask the user to input user_id 
     else: 
         return render_template('input_user_id.html') 
 
 @app.route('/event/<int:event_id>/')
 def event(event_id):
+    '''
+    Renders the event details page for an event
+    '''
     conn = dbi.connect()
-    event = helpers_nov18.get_event_by_id(conn, event_id)  # Assuming you have a helper function to get event details
-    
+    event = helpers_nov18.get_event_by_id(conn, event_id)  
 
     if event:
         if event['spam'] is not None:
+
+            #sample value in event['spam']: uploads/...jpeg
+            #want to strip out uploads so that the image can be displayed 
             filename = event['spam'].split('/')[-1]
         else:
             filename = None
-        return render_template('event_detail.html', event=event, filename = filename)
+        return render_template('event_detail.html', event=event, filename=filename)
     else:
         flash('Event not found.')
         return redirect(url_for('index'))
@@ -156,8 +173,7 @@ def event(event_id):
 @app.route('/filter_events/', methods=['GET', 'POST'])
 def filter_events():
     '''
-    This handler function renders a page that displays all events 
-    or certain events matching a filter
+    Renders a page that displays all events or certain events matching a filter
     '''
     if request.method == 'POST':
         #get all the filters applied by the user and store in a dictionary
@@ -173,19 +189,17 @@ def filter_events():
         #fetch the events that match the filters via a helper function
         events = helpers_nov18.get_filtered_events(conn, filters)
         return render_template('filter_events.html', events=events, filters=filters)
-
             
     else:
         #if get request, load all events
         conn = dbi.connect()
         events = helpers_nov18.get_homepage_events(conn)
-        #replace with jiayi's helper function
         return render_template('filter_events.html', events=events, filters={}) 
 
 @app.route('/search_events/', methods=['GET', 'POST'])
 def search_events():
     '''
-    This handler function renders a page where the user can search events by their names
+    Renders a page where the user can search events by their names
     '''
     if request.method == 'POST':
         search_term = request.form.get('search')
@@ -193,15 +207,13 @@ def search_events():
 
         #fetch events whose eventname contain the search term via a helper function
         events = helpers_nov18.search_events(conn, search_term)
-
         return render_template('search_events.html', events=events, search_term=search_term)
-        #replace event display html with jiayi's code
+    
+    #if get request, just display all the events
     else: 
         conn = dbi.connect()
         events = helpers_nov18.get_homepage_events(conn)
-
         return render_template('search_events.html', events=events, search_term="")
-        #replace event display htmlwith jiayi's code
 
 
 @app.route('/update/<int:eventID>', methods=['GET','POST'])
@@ -213,25 +225,31 @@ def update(eventID):
     conn = dbi.connect()
 
     if request.method == 'POST':
-        #if updating the form
-        if request.form.get('submit') == 'update': # if updating the form, check values
-            #turn list of tags into 1 str for easy passing
+        #if the user clicked on the update button...
+        if request.form.get('submit') == 'update': 
+
+            #convert list of tags into 1 str for easy passing
             event_tags_list = request.form.getlist("event_tags")
             if event_tags_list: 
                 event_tags = ','.join(event_tags_list)
             else: 
                 event_tags = 'None'
+
+            #store all the updated information in one dictionary
             eventDictToPass = request.form.to_dict()            
             eventDictToPass['event_tags'] = event_tags
             print(eventDictToPass)
-            # Handle file upload for 'spam'
+
+            #if user wants to upload a new image, give the newly uploaded file a new filename, 
+            #put it in the uploads folder, and add the new path to the dictionary
             f = request.files['event_image']
             if f: 
                 try:
                     nm = int(eventID) # may throw error
                     user_filename = f.filename
                     ext = user_filename.split('.')[-1]
-                    filename = secure_filename('{}.{}'.format(nm,ext))
+                    timestamp = int(time.time()) 
+                    filename = secure_filename('{}_{}.{}'.format(nm,timestamp,ext))
                     print(filename)
                     pathname = os.path.join(app.config['UPLOADS'],filename)
                     print(pathname)
@@ -243,27 +261,31 @@ def update(eventID):
             else: 
                 pathname = None
             eventDictToPass['event_image'] = pathname
-            
-
+        
             eventDict = helpers_nov18.update_event(conn, eventDictToPass, eventID)
             flash(f"Event updated successfully.")
            
-        #if deleting the form
-        elif request.form.get('submit') == 'delete': # find event with this ID and delete the event
-            eventDict = helpers_nov18.event_details(conn, eventID)
+        #if the user clicked on the delete button
+        elif request.form.get('submit') == 'delete': 
+            
+            #find event with this ID and delete the event
+            eventDict = helpers_nov18.get_event_by_id(conn, eventID)
             helpers_nov18.delete_event(conn, eventID)
             flash(f"Event ({eventDict.get('eventname')}) was deleted successfully")
             return redirect(url_for('index'))
         else: #Shouldn't get here
             flash(f"ERROR: neither update or delete")
-        #if the POST is a delete, will return a redirect to the home page for now
+
+    #if get request, display the update page for the event
     elif request.method == 'GET':
-    #either way, the return will be an update page for the event
-        eventDict = helpers_nov18.event_details(conn, eventID)
+
+        eventDict = helpers_nov18.get_event_by_id(conn, eventID)
         event_tags = eventDict.get("eventtag")
+
         if eventDict == None: #Shouldn't happen
             flash('Error: eventDict is empty with this eventID')
             return redirect(url_for('index'))
+
     return render_template('update_event.html', page_title='Fill in Missing Data', eventDict = eventDict, event_tags = event_tags)
 
 if __name__ == '__main__':
@@ -275,8 +297,8 @@ if __name__ == '__main__':
     else:
         port = os.getuid()
     # set this local variable to 'wmdb' or your personal or team db
-    #db_to_use = 'weevent_db' #team db
-    db_to_use = os.getlogin() + '_db' #personal db
+    db_to_use = 'weevent_db' #team db
+    #db_to_use = os.getlogin() + '_db' #personal db
     print('will connect to {}'.format(db_to_use))
     dbi.conf(db_to_use)
     app.debug = True

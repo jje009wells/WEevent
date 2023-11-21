@@ -3,6 +3,7 @@
 {% block main_content %}
 <h1>All Events (Click to update event)</h1>
 
+<!--Displays just the event names of events created by a user-->
 <ul>
     {% for event in data %}
         <li><a href="{{url_for('update', eventID=event.eventid)}}">{{event.eventname}}</li>

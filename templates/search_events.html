@@ -11,12 +11,17 @@
         </form>
     </div>
 
-    <!-- Display search results here -->
-    <div id="search-results">
-        <ul>
-            {% for event in events %}
-                <p>{{ event.eventname }} - {{ event.eventdate }}</p>
-            {% endfor %}
-        </ul>
-    </div>
+    <!-- Display search results -->
+    <ul class="event-list">
+        {% for event in events %}
+        <li>
+          <strong>{{ event.eventname }}</strong><br>
+          Location: {{ event.eventloc }}<br>
+          Description: {{ event.fulldesc }}<br>
+          Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
+          <a href="/event/{{ event.eventid }}">Click for details</a>
+        </li>
+        {% endfor %}
+      </ul>
+    
 {% endblock %}

@@ -1,12 +1,18 @@
+# @authors: Jen Enriquez, Victoria Lu, Jiayi Wu, Yannis Zhu
+
 from flask import flash
 
 import cs304dbi as dbi
 import os
 
-def insert_event_data(conn, organizer_id, username, user_email, event_name, event_type, short_description, event_date, start_time, end_time, event_location, rsvp, event_tags, full_description, contact_email, pathname):
+def insert_event_data(conn, organizer_id, username, user_email, event_name, 
+                        event_type, short_description, event_date, start_time, end_time, 
+                        event_location, rsvp, event_tags, full_description, 
+                        contact_email, pathname):
     curs = dbi.dict_cursor(conn)
     '''
-    This helper function inserts event information into the database
+    Inserts event information into the database.
+    Returns the event_id of the inserted event. This is useful for inserting spam for a new event. 
     '''
 
     #to avoid ref integrity issues, first insert data about the account
@@ -39,23 +45,42 @@ def insert_event_data(conn, organizer_id, username, user_email, event_name, even
             rsvp, event_tags, full_description, contact_email, pathname]
     )
     conn.commit() # Makes the change permanent
-    return 'Event data inserted' 
 
-def get_all_events(conn):
-    """
-    This function gets a list of all event names in currently in the eventcreated table.
-    """
+    curs.execute("select last_insert_id()")
+    event_id = curs.fetchone()['last_insert_id()']
+    return event_id
+
+
+def insert_event_image(conn, event_id, pathname):
+    '''
+    Inserts pathname into the spam column a newly created event using last_insert_id
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
-        """
-        select eventname, eventid
-        from eventcreated;
-        """
+        ''' 
+        update eventcreated set spam = %s where eventid = %s;
+        ''', [pathname, event_id]
     )
-    return curs.fetchall()
+    conn.commit()
+    return "Updated event image"
+
+# def get_all_events(conn):
+#     """
+#     Gets a list of all event names in currently in the eventcreated table.
+#     """
+#     curs = dbi.dict_cursor(conn)
+#     curs.execute(
+#         """
+#         select eventname, eventid
+#         from eventcreated;
+#         """
+#     )
+#     return curs.fetchall()
 
 def get_events_by_user(conn, userid):
     """
+    Gets all events created by a specific user. 
+    Used for displaying events that a user manages. 
     """
     curs = dbi.dict_cursor(conn)
     curs.execute(
@@ -67,7 +92,8 @@ def get_events_by_user(conn, userid):
 
 def get_homepage_events(conn):
     '''
-    This function gets a list of all event names in currently in the eventcreated table.
+    Gets all events in the database. 
+    Used for viewing all events, filtering, and searching.
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
@@ -77,20 +103,25 @@ def get_homepage_events(conn):
     )
     return curs.fetchall()
 
+
 def get_event_by_id(conn, event_id):
     '''
-    This function retrieves the details of a specific event by its event_id.
+    Gets a sepcific event by its event_id.
+    Used for uploading spam when creating an event. 
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''
-        SELECT * FROM eventcreated WHERE eventid = %s;
+        select * from eventcreated where eventid = %s;
         ''', [event_id]
     )
     return curs.fetchone()  # Returns a single event object or None if not found
 
 
 def get_filtered_events(conn, filters):
+    '''
+    Gets events matching certain filters
+    '''
     curs = dbi.dict_cursor(conn)
 
     #sample final query: 
@@ -112,7 +143,7 @@ def get_filtered_events(conn, filters):
     #if not, do not want it in the query
     if filters.get('date'):
         query += ' and eventdate = %s'
-        parameters.append(filters['date'])
+        parameters.append(filters['date']) #get user input 
 
     if filters.get('type'):
         query += ' and eventtype = %s'
@@ -125,12 +156,10 @@ def get_filtered_events(conn, filters):
         query += ' and organizerid in (select userid from account where username = %s)'
         parameters.append(filters['org_name'])
     
-    tags_to_filter = filters.get('tags') #this is a list of tags 
-
+    tags_to_filter = filters.get('tags') #this is a list of tags inputted by the user
     if tags_to_filter: 
-
         #note: if the user selects career and academic as their tags, 
-        #we assume that that the user want to see events with the career tag or  the academic tag
+        #we assume that that the user wants to see events with the career tag or the academic tag
         #(not events with the the career tag and the academic tag simultaneously)
         tag_conditions = []
 
@@ -141,12 +170,12 @@ def get_filtered_events(conn, filters):
         
         #assemble the final string 
         query += ' and (' + ' or '.join(tag_conditions) + ')'   
-    
+
     #add ; at the end of the final query
     query += ';'
      
-    print("Query:", query)
-    print("Parameters:", parameters)
+    #print("Query:", query)
+    #print("Parameters:", parameters)
 
     #get all the events matching the filters 
     curs.execute(query, parameters)
@@ -154,6 +183,9 @@ def get_filtered_events(conn, filters):
     return curs.fetchall()
 
 def search_events(conn, search_term):
+    '''
+    Gets all events whose event names match a search term
+    '''
     curs = dbi.dict_cursor(conn)
     query = ''' select * from eventcreated where eventname like %s '''
     curs.execute(query, ['%' + search_term + '%'])
@@ -161,55 +193,58 @@ def search_events(conn, search_term):
 
 def update_event(conn, formData, eventID):
     """
-    Updates event with info gathered from form.
+    Updates event with info gathered info from form.
     Returns the full updated event dictionary
     """
     curs = dbi.dict_cursor(conn)
     
-    curs.execute(# Update event with new data
+    #update an event with new data
+    curs.execute(
         """
         update eventcreated
         set eventname = %s, eventtype = %s, shortdesc = %s,eventdate = %s,starttime = %s,
             endtime = %s,eventloc = %s,rsvp = %s,eventtag = %s,fulldesc = %s,spam = %s
         where eventid = %s;
         """, [formData.get('event_name'), formData.get('event_type'), formData.get('short_desc'),formData.get('event_date'), formData.get('start_time'),
-            formData.get('end_time'), formData.get('event_location'),formData.get('rsvp_required'),formData.get('event_tags'),formData.get('full_desc'),formData.get('event_image'), eventID]
+            formData.get('end_time'), formData.get('event_location'),formData.get('rsvp_required'),formData.get('event_tags'),formData.get('full_desc'), formData.get('event_image'), eventID]
     )
     conn.commit()
-    eventDict = event_details(conn,eventID)
+    eventDict = get_event_by_id(conn,eventID)
     return eventDict
 
-def event_details(conn, eventID):
-    """
-    Returns a dict with information about a given event based on the eventID
-    """
-    curs = dbi.dict_cursor(conn)
-    curs.execute( # find the given movie
-        '''
-        select eventid, organizerid, eventname, eventtype, shortdesc,eventdate,starttime,endtime,eventloc,rsvp,eventtag,fulldesc,contactemail,spam
-        from eventcreated
-        where eventid = %s;
-        ''', [eventID]
-    )
+
+#this is the same as get_event_by_id, modified app_nov18.py
+# def event_details(conn, eventID):
+#     """
+#     Gets all relevant 
+#     """
+#     curs = dbi.dict_cursor(conn)
+#     curs.execute( # find the given movie
+#         '''
+#         select eventid, organizerid, eventname, eventtype, shortdesc,eventdate,starttime,endtime,eventloc,rsvp,eventtag,fulldesc,contactemail,spam
+#         from eventcreated
+#         where eventid = %s;
+#         ''', [eventID]
+#     )
     
-    eventDict = curs.fetchone()  
-    return eventDict
+#     eventDict = curs.fetchone()  
+#     return eventDict
 
-def get_event_by_id(conn, event_id):
-    '''
-    This function retrieves the details of a specific event by its event_id.
-    '''
-    curs = dbi.dict_cursor(conn)
-    curs.execute(
-        '''
-        SELECT * FROM eventcreated WHERE eventid = %s;
-        ''', [event_id]
-    )
-    return curs.fetchone()  # Returns a single event object or None if not found
+# def get_event_by_id(conn, event_id):
+#     '''
+#     This function retrieves the details of a specific event by its event_id.
+#     '''
+#     curs = dbi.dict_cursor(conn)
+#     curs.execute(
+#         '''
+#         select * from eventcreated where eventid = %s;
+#         ''', [event_id]
+#     )
+#     return curs.fetchone() 
 
 def delete_event(conn, eventID):
     """
-    Remove event with given id from the database
+    Removes event with given id from the database
     """
     curs = dbi.dict_cursor(conn)
     curs.execute(
@@ -222,7 +257,7 @@ def delete_event(conn, eventID):
 
 
 if __name__ == '__main__':
-    #database = 'weevent_db' #team db
-    database = os.getlogin() + '_db'
+    database = 'weevent_db' #team db
+    #database = os.getlogin() + '_db'
     dbi.conf(database)
     conn = dbi.connect()

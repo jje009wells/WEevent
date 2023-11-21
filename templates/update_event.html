@@ -1,148 +1,125 @@
 {% extends "base.html" %}
 {% block main_content %}
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Create Event</title>
-    <link rel="stylesheet" type="text/css" href="/../static/style.css">
-  </head>
-  <body>
-    <div id="navigation">
-      <!-- Navigation links -->
-    </div>
-    <div id="main">
-      {% with messages = get_flashed_messages() %}
-        {% if messages %}
-          <div id="messages">
-            {% for msg in messages %}
-              <p>{{ msg }}</p>
-            {% endfor %}
+<div id="content">
+  <h1>Update Event</h1>
+
+  <form method="POST" action="{{url_for('update', eventID=eventDict.eventid)}}" enctype="multipart/form-data">
+    <table>
+      <tr>
+        <td><label for="event_name">Event Name</label></td>
+        <td><input id="event_name" name="event_name" required value='{{eventDict.eventname}}'></td>
+      </tr>
+      <tr>
+        <td><label for="event_type">Event Type</label></td>
+        <td>
+          <select id="event_type" name="event_type">
+            <option value='{{eventDict.eventtype}}'>Current: {{eventDict.eventtype}}</option>
+            <option value="personal">Personal</option>
+            <option value="org">Organization</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td><label for="short_desc">Short Description</label></td>
+        <td><textarea id="short_desc" name="short_desc" required>{{eventDict.shortdesc}}</textarea></td>
+      </tr>
+      <tr>
+        <td><label for="event_date">Event Date</label></td>
+        <td><input type="date" id="event_date" name="event_date" required value='{{eventDict.eventdate}}'> Prev value: {{eventDict.eventdate}}</td>
+      </tr>
+
+      <tr>
+        <td><label for="start_time">Start Time</label></td>
+        <td><input type="time" id="start_time" name="start_time" required value='{{eventDict.starttime}}'> Prev value: {{eventDict.starttime}}</td>
+      </tr>
+
+      <tr>
+        <td><label for="end_time">End Time</label></td>
+        <td><input type="time" id="end_time" name="end_time" required value='{{eventDict.endtime}}'> Prev value: {{eventDict.endtime}}</td>
+      </tr>
+
+      <tr>
+        <td><label for="event_location">Location</label></td>
+        <td><input id="event_location" name="event_location" required value='{{eventDict.eventloc}}'> Prev value: {{eventDict.eventloc}}</td>
+      </tr>
+      <tr>
+        <td><label for="rsvp_required">RSVP Required</label></td>
+        <td>
+          <select id="rsvp_required" name="rsvp_required">
+            <option value='{{eventDict.rsvp}}'>Current: {{eventDict.rsvp}}</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td><label for="full_desc">Full Description</label></td>
+        <td><textarea id="full_desc" name="full_desc" required value='{{eventDict.fulldesc}}'>{{eventDict.fulldesc}}</textarea></td>
+      </tr>
+
+      <tr>
+        <td><label for="event_tags">Event Tags (Optional)</label></td>
+        <td>
+          <div id="tag-checkboxes">
+            <!-- need to pass the event tags string as eventstr when doing the render template -->
+            {% if 'academic' in event_tags %}
+              <label><input type="checkbox" name="event_tags" value="academic" checked> Academic</label>
+            {% else %}
+              <label><input type="checkbox" name="event_tags" value="academic"> Academic</label>
+            {% endif %}
+
+            {% if 'sport' in event_tags %}
+              <label><input type="checkbox" name="event_tags" value="sport" checked> Sport</label>
+            {% else %}
+              <label><input type="checkbox" name="event_tags" value="sport"> Sport</label>
+            {% endif %}
+
+            {% if 'cultural' in event_tags %}
+              <label><input type="checkbox" name="event_tags" value="cultural" checked> Cultural</label>
+            {% else %}
+              <label><input type="checkbox" name="event_tags" value="cultural"> Cultural</label>
+            {% endif %}
+
+            {% if 'religious' in event_tags %}
+            <label><input type="checkbox" name="event_tags" value="religious" checked> Religious</label>
+            {% else %}
+              <label><input type="checkbox" name="event_tags" value="religious"> Religious</label>
+            {% endif %}
+
+            {% if 'volunteering' in event_tags %}
+              <label><input type="checkbox" name="event_tags" value="volunteering" checked> Volunteering</label>
+            {% else %}
+              <label><input type="checkbox" name="event_tags" value="volunteering"> Volunteering</label>
+            {% endif %}
+
+            {% if 'career' in event_tags %}
+              <label><input type="checkbox" name="event_tags" value="career" checked> Career</label>
+            {% else %}
+              <label><input type="checkbox" name="event_tags" value="career"> Career</label>
+            {% endif %}
+
+            {% if 'other' in event_tags %}
+              <label><input type="checkbox" name="event_tags" value="other" checked> Other</label>
+            {% else %}
+              <label><input type="checkbox" name="event_tags" value="other"> Other</label>
+            {% endif %}
           </div>
+        </td>
+      </tr>
+      <!-- will need to update this once the image upload is complete -->
+      <tr>
+        <td><label for="event_image">Upload Image (Spam - Optional)</label></td>
+        {% if eventDict.spam %}
+          <p> File: {{ eventDict.spam }} uploaded previously.</p>
+        {% else %}
+          <p> No file uploaded previously. </p>
         {% endif %}
-      {% endwith %}
-
-    <div id="content">
-      <h1>Update Event</h1>
-
-      <form method="POST" action="{{url_for('update', eventID=eventDict.eventid)}}" enctype="multipart/form-data">
-        <table>
-          <tr>
-            <td><label for="event_name">Event Name</label></td>
-            <td><input id="event_name" name="event_name" required value='{{eventDict.eventname}}'></td>
-          </tr>
-          <tr>
-            <td><label for="event_type">Event Type</label></td>
-            <td>
-              <select id="event_type" name="event_type">
-                <option value='{{eventDict.eventtype}}'>Current: {{eventDict.eventtype}}</option>
-                <option value="personal">Personal</option>
-                <option value="org">Organization</option>
-              </select>
-            </td>
-          </tr>
-          <tr>
-            <td><label for="short_desc">Short Description</label></td>
-            <td><textarea id="short_desc" name="short_desc" required>{{eventDict.shortdesc}}</textarea></td>
-          </tr>
-          <tr>
-            <td><label for="event_date">Event Date</label></td>
-            <td><input type="date" id="event_date" name="event_date" required value='{{eventDict.eventdate}}'> Prev value: {{eventDict.eventdate}}</td>
-          </tr>
-
-          <tr>
-            <td><label for="start_time">Start Time</label></td>
-            <td><input type="time" id="start_time" name="start_time" required value='{{eventDict.starttime}}'> Prev value: {{eventDict.starttime}}</td>
-          </tr>
-
-          <tr>
-            <td><label for="end_time">End Time</label></td>
-            <td><input type="time" id="end_time" name="end_time" required value='{{eventDict.endtime}}'> Prev value: {{eventDict.endtime}}</td>
-          </tr>
-
-          <tr>
-            <td><label for="event_location">Location</label></td>
-            <td><input id="event_location" name="event_location" required value='{{eventDict.eventloc}}'> Prev value: {{eventDict.eventloc}}</td>
-          </tr>
-          <tr>
-            <td><label for="rsvp_required">RSVP Required</label></td>
-            <td>
-              <select id="rsvp_required" name="rsvp_required">
-                <option value='{{eventDict.rsvp}}'>Current: {{eventDict.rsvp}}</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-            </td>
-          </tr>
-          <tr>
-            <td><label for="full_desc">Full Description</label></td>
-            <td><textarea id="full_desc" name="full_desc" required value='{{eventDict.fulldesc}}'>{{eventDict.fulldesc}}</textarea></td>
-          </tr>
-
-          <tr>
-            <td><label for="event_tags">Event Tags (Optional)</label></td>
-            <td>
-              <div id="tag-checkboxes">
-                <!-- need to pass the event tags string as eventstr when doing the render template -->
-                {% if 'academic' in event_tags %}
-                  <label><input type="checkbox" name="event_tags" value="academic" checked> Academic</label>
-                {% else %}
-                  <label><input type="checkbox" name="event_tags" value="academic"> Academic</label>
-                {% endif %}
-
-                {% if 'sport' in event_tags %}
-                  <label><input type="checkbox" name="event_tags" value="sport" checked> Sport</label>
-                {% else %}
-                  <label><input type="checkbox" name="event_tags" value="sport"> Sport</label>
-                {% endif %}
-
-                {% if 'cultural' in event_tags %}
-                  <label><input type="checkbox" name="event_tags" value="cultural" checked> Cultural</label>
-                {% else %}
-                  <label><input type="checkbox" name="event_tags" value="cultural"> Cultural</label>
-                {% endif %}
-
-                {% if 'religious' in event_tags %}
-                <label><input type="checkbox" name="event_tags" value="religious" checked> Religious</label>
-                {% else %}
-                  <label><input type="checkbox" name="event_tags" value="religious"> Religious</label>
-                {% endif %}
-
-                {% if 'volunteering' in event_tags %}
-                  <label><input type="checkbox" name="event_tags" value="volunteering" checked> Volunteering</label>
-                {% else %}
-                  <label><input type="checkbox" name="event_tags" value="volunteering"> Volunteering</label>
-                {% endif %}
-
-                {% if 'career' in event_tags %}
-                  <label><input type="checkbox" name="event_tags" value="career" checked> Career</label>
-                {% else %}
-                  <label><input type="checkbox" name="event_tags" value="career"> Career</label>
-                {% endif %}
-
-                {% if 'other' in event_tags %}
-                  <label><input type="checkbox" name="event_tags" value="other" checked> Other</label>
-                {% else %}
-                  <label><input type="checkbox" name="event_tags" value="other"> Other</label>
-                {% endif %}
-              </div>
-            </td>
-          </tr>
-          <!-- will need to update this once the image upload is complete -->
-          <tr>
-            <td><label for="event_image">Upload Image (Spam - Optional)</label></td>
-            <td><input type="file" id="event_image" name="event_image"></td>
-          </tr>
-        </table>
-        <input type="submit" name="submit" value="update">
-        <input type="submit" name="submit" value="delete">
-      </form>
-    </div>
+        <td><input type="file" id="event_image" name="event_image"></td>
+      </tr>
+    </table>
+    <input type="submit" name="submit" value="update">
+    <input type="submit" name="submit" value="delete">
+  </form>
+</div>
     
-    <script src="//code.jquery.com/jquery-3.2.1.min.js"></script>
-    
-    <!-- JS code would go here -->
-    
-  </body>
-</html>
 {% endblock %}

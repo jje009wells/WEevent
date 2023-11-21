@@ -34,18 +34,17 @@
   </div>
 
   <!--This is for displaying the events that match the filters-->
-  <div id="event-list">
-    <ul>
-      {% for event in events %}
-      <li>
-        <strong>{{ event.eventname }}</strong><br>
-        Location: {{ event.eventloc }}<br>
-        Description: {{ event.fulldesc }}<br>
-        Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
-        <a href="/event/{{ event.eventid }}">Click for details</a>
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
+
+  <ul class="event-list">
+    {% for event in events %}
+    <li>
+      <strong>{{ event.eventname }}</strong><br>
+      Location: {{ event.eventloc }}<br>
+      Description: {{ event.fulldesc }}<br>
+      Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
+      <a href="/event/{{ event.eventid }}">Click for details</a>
+    </li>
+    {% endfor %}
+  </ul>
 
 {% endblock %}

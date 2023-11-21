@@ -1,4 +1,4 @@
-use vl100_db; 
+use weevent_db; 
 
 drop table if exists comment;
 drop table if exists registration;

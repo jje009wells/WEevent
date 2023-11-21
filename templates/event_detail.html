@@ -1,10 +1,13 @@
 {% extends "base.html" %}
 
+<!--Displays all details of an event-->
 {% block main_content %}
   <div class="event-details-container">
     <h1>{{ event.eventname }}</h1>
     <p><strong>Date:</strong> {{ event.eventdate }}</p>
     <p><strong>Time:</strong> From {{ event.starttime }} to {{ event.endtime }}</p>
+    <p><strong>Type:</strong> {{ event.eventtype }} </p>
+    <p><strong>Organizer ID (for testing purposes only):</strong> {{ event.organizerid }} </p>
     <p><strong>Location:</strong> {{ event.eventloc }}</p>
     <p><strong>Description:</strong> {{ event.fulldesc }}</p>
     <p><strong>Contact Email:</strong> <a href="mailto:{{ event.contactemail }}">{{ event.contactemail }}</a></p>
@@ -12,7 +15,6 @@
     <p><strong>Tags:</strong> {{ event.eventtag }}</p>
     
     {% if filename %}
-
       <img src="{{ url_for('uploads', filename=filename) }}" alt="Event Image">
     {% endif %}
 
