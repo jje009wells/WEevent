@@ -73,30 +73,37 @@ def create_event():
         else: 
             event_tags = None
         
-        # Handle file upload for 'spam'
-        f = request.files['event_image']
-        if f: 
-            try:
-                nm = int(organizer_id) # may throw error
-                user_filename = f.filename
-                ext = user_filename.split('.')[-1]
-                filename = secure_filename('{}.{}'.format(nm,ext))
-                pathname = os.path.join(app.config['UPLOADS'],filename)
-                f.save(pathname)
-                flash('Upload successful')
-            except Exception as err:
-                flash('Upload failed {why}'.format(why=err))
-                return render_template('create_event.html')
-        else: 
-            pathname = None
+        # don't want to upload until we can confirm that the event was actually created
+        # also need to use eventid as the name for the file
+        # so will first create the event, then pass the event image filename to be uploaded via a separate function
+        
 
-        #*********I changed the parameter passing here because I previously had to modify the tags input
-        helpers_nov18.insert_event_data(conn, organizer_id, username, 
-                                    user_email, event_name, event_type, 
-                                    short_description, event_date, start_time, 
-                                    end_time, event_location, rsvp, event_tags, 
-                                    full_description, contact_email, pathname)
-        #ret = helpers.insert_event_data(conn,request.form)
+
+        # # OLD VERS:
+        # # Handle file upload for 'spam'
+        # f = request.files['event_image']
+        # if f: 
+        #     try:
+        #         nm = int(organizer_id) # may throw error
+        #         user_filename = f.filename
+        #         ext = user_filename.split('.')[-1]
+        #         filename = secure_filename('{}.{}'.format(nm,ext))
+        #         pathname = os.path.join(app.config['UPLOADS'],filename)
+        #         f.save(pathname)
+        #         flash('Upload successful')
+        #     except Exception as err:
+        #         flash('Upload failed {why}'.format(why=err))
+        #         return render_template('create_event.html')
+        # else: 
+        #     pathname = None
+
+        # #*********I changed the parameter passing here because I previously had to modify the tags input
+        # helpers_nov18.insert_event_data(conn, organizer_id, username, 
+        #                             user_email, event_name, event_type, 
+        #                             short_description, event_date, start_time, 
+        #                             end_time, event_location, rsvp, event_tags, 
+        #                             full_description, contact_email, pathname)
+        # #ret = helpers.insert_event_data(conn,request.form)
         flash("Event successfully created.")
         return redirect(url_for("create_event"))
 
@@ -137,7 +144,10 @@ def event(event_id):
     
 
     if event:
-        filename = event['spam'].split('/')[-1]
+        if event['spam'] is not None:
+            filename = event['spam'].split('/')[-1]
+        else:
+            filename = None
         return render_template('event_detail.html', event=event, filename = filename)
     else:
         flash('Event not found.')
@@ -213,9 +223,30 @@ def update(eventID):
                 event_tags = 'None'
             eventDictToPass = request.form.to_dict()            
             eventDictToPass['event_tags'] = event_tags
+            print(eventDictToPass)
+            # Handle file upload for 'spam'
+            f = request.files['event_image']
+            if f: 
+                try:
+                    nm = int(eventID) # may throw error
+                    user_filename = f.filename
+                    ext = user_filename.split('.')[-1]
+                    filename = secure_filename('{}.{}'.format(nm,ext))
+                    print(filename)
+                    pathname = os.path.join(app.config['UPLOADS'],filename)
+                    print(pathname)
+                    f.save(pathname)
+                    flash('Upload successful')
+                except Exception as err:
+                    flash('Upload failed {why}'.format(why=err))
+                    return render_template('create_event.html')
+            else: 
+                pathname = None
+            eventDictToPass['event_image'] = pathname
+            
 
-            flash(f"Event updated successfully.")
             eventDict = helpers_nov18.update_event(conn, eventDictToPass, eventID)
+            flash(f"Event updated successfully.")
            
         #if deleting the form
         elif request.form.get('submit') == 'delete': # find event with this ID and delete the event
@@ -245,8 +276,7 @@ if __name__ == '__main__':
         port = os.getuid()
     # set this local variable to 'wmdb' or your personal or team db
     #db_to_use = 'weevent_db' #team db
-    #db_to_use = os.getlogin() + '_db' #personal db
-    db_to_use = os.getlogin() + '_db'
+    db_to_use = os.getlogin() + '_db' #personal db
     print('will connect to {}'.format(db_to_use))
     dbi.conf(db_to_use)
     app.debug = True

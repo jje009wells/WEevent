@@ -165,8 +165,8 @@ def update_event(conn, formData, eventID):
     Returns the full updated event dictionary
     """
     curs = dbi.dict_cursor(conn)
-    #do some error checking first, then proceed with this:
-    curs.execute(# Update movie with new data
+    
+    curs.execute(# Update event with new data
         """
         update eventcreated
         set eventname = %s, eventtype = %s, shortdesc = %s,eventdate = %s,starttime = %s,
