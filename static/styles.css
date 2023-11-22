@@ -29,4 +29,9 @@
   .event-list li:hover {
     background-color: #e0e0e0;
   }
+
+  img {
+    width:400px;
+    height:auto;
+  }
   
