@@ -34,4 +34,9 @@
     width:400px;
     height:auto;
   }
+
+  textarea {
+    width: 400px;
+    height: 150px;
+  }
   

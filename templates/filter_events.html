@@ -26,7 +26,7 @@
             <label><input type="checkbox" name="event_tags" value="religious"{% if 'religious' in filters.tags %}checked{% endif %}> Religious</label>
             <label><input type="checkbox" name="event_tags" value="volunteering"{% if 'volunteering' in filters.tags %}checked{% endif %}> Volunteering</label>
             <label><input type="checkbox" name="event_tags" value="career"{% if 'career' in filters.tags %}checked{% endif %}> Career</label>
-            <label><input type="checkbox" name="event_tags" value="other"{% if 'ither' in filters.tags %}checked{% endif %}> Other</label>
+            <label><input type="checkbox" name="event_tags" value="other"{% if 'other' in filters.tags %}checked{% endif %}> Other</label>
         </div>
         
       <input type="submit" value="Filter">
@@ -40,8 +40,11 @@
     <li>
       <strong>{{ event.eventname }}</strong><br>
       Location: {{ event.eventloc }}<br>
-      Description: {{ event.fulldesc }}<br>
+      Description: {{ event.shortdesc }}<br>
       Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
+      Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
+      Type: {{ event.eventtype }} <br>
+      Tags: {{ event.eventtag }} <br>
       <a href="/event/{{ event.eventid }}">Click for details</a>
     </li>
     {% endfor %}
