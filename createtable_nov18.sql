@@ -14,15 +14,19 @@ drop table if exists account;
 CREATE TABLE account (
   userid int PRIMARY KEY AUTO_INCREMENT,
   usertype enum('personal', 'org'),
-  username varchar(40),
+  username varchar(40) not null,
   email varchar(40), 
-  index (userid)
+  index (userid),
+  
+  hashedp char(60),
+  unique(username),
+  index(username),
+
 )
 ENGINE = InnoDB;
 
 CREATE TABLE personal_account (
   userid int PRIMARY KEY,
-  studentid char(9), 
   foreign key (userid) references account(userid) 
     on delete cascade
     on update cascade
