@@ -1,4 +1,4 @@
-use weevent_db; 
+use je100_db; 
 
 drop table if exists comment;
 drop table if exists registration;
@@ -20,7 +20,7 @@ CREATE TABLE account (
   
   hashedp char(60),
   unique(username),
-  index(username),
+  index(username)
 
 )
 ENGINE = InnoDB;
