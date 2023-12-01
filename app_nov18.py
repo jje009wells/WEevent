@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 import cs304dbi as dbi
 
-import random, os, helpers_nov18
+import random, os, helpers_nov18, weeventlogin
 
 app.secret_key = 'your secret here'
 # replace that with a random key
@@ -288,6 +288,137 @@ def update(eventID):
 
     return render_template('update_event.html', page_title='Fill in Missing Data', eventDict = eventDict, event_tags = event_tags)
 
+
+@app.route('/register/', methods=['GET','POST'])
+def register():
+    '''
+    Shows a form for registering an account with our DB, can choose to submit either the personal account or the org account
+    '''
+    conn = dbi.connect()
+
+    if request.method == 'POST':
+        #if the user clicked on the register personal
+        if request.form.get('submit') == 'register_personal': 
+            # get the info from the personal account form
+            userInfo = request.form.to_dict()
+            userInfo['user_type'] = 'personal'
+            print(userInfo)
+
+            username = request.form.get('username')
+            passwd1 = request.form.get('password1')
+            passwd2 = request.form.get('password2')
+            if passwd1 != passwd2:
+                flash('passwords do not match')
+                return redirect( url_for('register'))
+            #conn = dbi.connect()
+            (uid, is_dup, other_err) = weeventlogin.insert_user(conn, userInfo)
+            if other_err:
+                raise other_err
+            if is_dup:
+                flash('Sorry; that username is taken')
+                return redirect(url_for('register'))
+            ## success
+            flash('You were registered! FYI, you were issued UID {}'.format(uid))
+            session['username'] = username
+            session['uid'] = uid
+            session['logged_in'] = True
+            session['visits'] = 1
+            return redirect( url_for('all_events_managed', page_title='Your events') )
+            
+
+
+            # #convert list of tags into 1 str for easy passing
+            # event_tags_list = request.form.getlist("event_tags")
+            # if event_tags_list: 
+            #     event_tags = ','.join(event_tags_list)
+            # else: 
+            #     event_tags = 'None'
+
+            # #store all the updated information in one dictionary
+            # eventDictToPass = request.form.to_dict()            
+            # eventDictToPass['event_tags'] = event_tags
+            # print(eventDictToPass)
+
+            # #if user wants to upload a new image, give the newly uploaded file a new filename, 
+            # #put it in the uploads folder, and add the new path to the dictionary
+            # f = request.files['event_image']
+            # if f: 
+            #     try:
+            #         nm = int(eventID) # may throw error
+            #         user_filename = f.filename
+            #         ext = user_filename.split('.')[-1]
+            #         timestamp = int(time.time()) 
+            #         filename = secure_filename('{}_{}.{}'.format(nm,timestamp,ext))
+            #         print(filename)
+            #         pathname = os.path.join(app.config['UPLOADS'],filename)
+            #         print(pathname)
+            #         f.save(pathname)
+            #         flash('Upload successful')
+            #     except Exception as err:
+            #         flash('Upload failed {why}'.format(why=err))
+            #         return render_template('create_event.html')
+            # else: 
+            #     pathname = None
+            # eventDictToPass['event_image'] = pathname
+        
+            # eventDict = helpers_nov18.update_event(conn, eventDictToPass, eventID)
+            # flash(f"Event updated successfully.")
+           
+        #if the user clicked on the delete button
+        elif request.form.get('submit') == 'register_org': 
+            flash(f"clicked register org")
+            userInfo = request.form.to_dict()
+            userInfo['user_type'] = 'org'
+            print(userInfo)
+
+            username = request.form.get('username')
+            passwd1 = request.form.get('password1')
+            passwd2 = request.form.get('password2')
+            if passwd1 != passwd2:
+                flash('passwords do not match')
+                return redirect( url_for('register'))
+            #conn = dbi.connect()
+            (uid, is_dup, other_err) = weeventlogin.insert_user(conn, userInfo)
+            if other_err:
+                raise other_err
+            if is_dup:
+                flash('Sorry; that username is taken')
+                return redirect(url_for('register'))
+            ## success
+            flash('You were registered! FYI, you were issued UID {}'.format(uid))
+            session['username'] = username
+            session['uid'] = uid
+            session['logged_in'] = True
+            session['visits'] = 1
+            return redirect( url_for('all_events_managed', page_title='Your events') )
+
+            # #find event with this ID and delete the event
+            # eventDict = helpers_nov18.get_event_by_id(conn, eventID)
+            # helpers_nov18.delete_event(conn, eventID)
+            # flash(f"Event ({eventDict.get('eventname')}) was deleted successfully")
+            # return redirect(url_for('index'))
+        else: #neither
+            userInfo = request.form.to_dict()
+            print(userInfo)
+            flash(f"probs shouldn't get here")
+
+    #if get request, display the update page for the event
+    elif request.method == 'GET':
+        flash(f"this was a GET")
+        # eventDict = helpers_nov18.get_event_by_id(conn, eventID)
+        # event_tags = eventDict.get("eventtag")
+
+        # if eventDict == None: #Shouldn't happen
+        #     flash('Error: eventDict is empty with this eventID')
+        #     return redirect(url_for('index'))
+
+    return render_template('register_account.html', page_title='Register an Account')
+
+
+@app.route('/login/', methods=['GET','POST'])
+def login():
+    return render_template('login.html', page_title='Login')
+
 if __name__ == '__main__':
     import sys, os
     if len(sys.argv) > 1:
@@ -297,8 +428,8 @@ if __name__ == '__main__':
     else:
         port = os.getuid()
     # set this local variable to 'wmdb' or your personal or team db
-    db_to_use = 'weevent_db' #team db
-    #db_to_use = os.getlogin() + '_db' #personal db
+    #db_to_use = 'weevent_db' #team db
+    db_to_use = os.getlogin() + '_db' #personal db
     print('will connect to {}'.format(db_to_use))
     dbi.conf(db_to_use)
     app.debug = True

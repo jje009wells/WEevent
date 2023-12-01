@@ -13,7 +13,7 @@ drop table if exists account;
 
 CREATE TABLE account (
   userid int PRIMARY KEY AUTO_INCREMENT,
-  usertype enum('personal', 'org'),
+  usertype enum('personal', 'org') not null,
   username varchar(40) not null,
   email varchar(40), 
   index (userid),
@@ -35,7 +35,7 @@ ENGINE = InnoDB;
 
 CREATE TABLE org_account (
   userid int PRIMARY KEY,
-  e_board varchar(500),
+  eboard varchar(500),
   orginfo varchar(2000), 
   foreign key (userid) references account(userid) 
     on delete cascade
