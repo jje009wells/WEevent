@@ -167,18 +167,26 @@ def all_events_managed():
     else:
         flash('This was a GET') 
         conn = dbi.connect()
-        userid = session.get('uid')
+        if session.get('logged_in') == False:
+            flash("You are not logged in, cannot display your events")
+            return redirect(url_for('index'))
+        elif session.get('logged_in') == True:
+            userid = session.get('uid')
 
-        #get events created by a certain user
-        #want to enforce that only the organizer can manage (update/delete) events
-        #will modify this code after adding in login functionality
-        events = helpers_nov18.get_events_by_user(conn, userid)
-        if events:
-            return render_template('all_events_managed.html', page_title='All Events', data=events)
+            #get events created by a certain user
+            #want to enforce that only the organizer can manage (update/delete) events
+            #will modify this code after adding in login functionality
+            events = helpers_nov18.get_events_by_user(conn, userid)
+            if events:
+                return render_template('all_events_managed.html', page_title='All Events', data=events)
+            else:
+                flash('You have not created any events yet.')
+                # return redirect(url_for('index'))
+                return render_template('all_events_managed.html', page_title='All Events', data=events)
         else:
-            flash('You have not created any events yet.')
-            # return redirect(url_for('index'))
-            return render_template('all_events_managed.html', page_title='All Events', data=events)
+            flash("You are not logged in nor logged out, but a secret third thing")
+            return redirect(url_for('index'))
+            
 
 
 @app.route('/event/<int:event_id>/')
@@ -416,7 +424,8 @@ def login():
             username = request.form.get('username')
             passwd = request.form.get('password')
             conn = dbi.connect()
-            (ok, uid) = weeventlogin.login_user(conn, username, passwd)
+            (ok, uid, email) = weeventlogin.login_user(conn, username, passwd)
+            print(uid)
             if not ok:
                 flash('login incorrect, please try again or join')
                 return redirect(url_for('login'))
@@ -425,6 +434,7 @@ def login():
             flash('successfully logged in as '+username)
             session['username'] = username
             session['uid'] = uid
+            session['email'] = email
             session['logged_in'] = True
             #session['visits'] = 1 #don't think we need to keep track of this?
             return redirect( url_for('all_events_managed', username=username) )

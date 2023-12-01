@@ -8,17 +8,17 @@
     <table>
       <tr>
         <td><label for="organizer_id">Organizer ID</label></td>
-        <td><input id="organizer_id" name="organizer_id" required></td>
+        <td><input id="organizer_id" name="organizer_id" required value = {{session.uid}}></td>
       </tr>
 
       <tr>
         <td><label for="username">Name</label></td>
-        <td><input type="text" id="username" name="username" required></td>
+        <td><input type="text" id="username" name="username" required value = {{session.username}}></td>
       </tr>
       
       <tr>
         <td><label for="user_email">User Email</label></td>
-        <td><input type="email" id="user_email" name="user_email" required></td>
+        <td><input type="email" id="user_email" name="user_email" required value = {{session.email}}></td>
       </tr>
 
       <tr>
