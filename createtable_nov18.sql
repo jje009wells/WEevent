@@ -27,6 +27,7 @@ ENGINE = InnoDB;
 
 CREATE TABLE personal_account (
   userid int PRIMARY KEY,
+  -- studentid char(9),
   foreign key (userid) references account(userid) 
     on delete cascade
     on update cascade

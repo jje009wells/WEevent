@@ -47,22 +47,22 @@ def login_user(conn, username, password):
 Returns True if success and returns the uid as the second value and the account email as the third value.
 Otherwise, False, False.'''
     curs = dbi.cursor(conn)
-    curs.execute('''SELECT userid, username, email, hashedp FROM account 
+    curs.execute('''SELECT userid, hashedp FROM account 
                     WHERE username = %s''',
                  [username])
     row = curs.fetchone()
     if row is None:
         # no such user
-        return (False, False, False)
-    uid, username, email, hashed = row
+        return (False, False)
+    uid, hashed = row
     hashed2_bytes = bcrypt.hashpw(password.encode('utf-8'),
                                   hashed.encode('utf-8'))
     hashed2 = hashed2_bytes.decode('utf-8')
     if hashed == hashed2:
-        return (True, uid, email)
+        return (True, uid)
     else:
         # password incorrect
-        return (False, False, False)
+        return (False, False)
 
 def delete_user(conn, id):
     curs = dbi.cursor(conn)

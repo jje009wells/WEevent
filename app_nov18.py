@@ -25,6 +25,9 @@ app.config['MAX_CONTENT_LENGTH'] = 1*1024*1024 # 1 MB
 # This gets us better error messages for certain common request errors
 app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 
+# so the that the session will expire eventually?
+app.config["SESSION_PERMANENT"] = False
+
 @app.route('/')
 def index():
     '''
@@ -46,72 +49,78 @@ def create_event():
     '''
     conn = dbi.connect()
     if request.method == "GET":
-        return render_template("create_event.html", method="POST")
+        if session.get('uid') is None:
+            flash("You are not logged in, please log in to create an event!")
+            return redirect(url_for('login'))
+        else:
+            return render_template("create_event.html", method="POST")
 
     else:
-        #note: since we're not enforcing login at this phase, we need to collect this information
-        #so that the account table can be populated (if it is not populationed, we will get referential)
-        #integrity issues) when we insert event information
-        #after we enforce login, we no longer need to collect organizer_id, username, and user_email
-        organizer_id = request.form.get("organizer_id")
-        username = request.form.get("username")
-        user_email = request.form.get("user_email")
+        if session.get('uid') is None:
+            flash("You are not logged in, please log in to create an event!")
+            return redirect(url_for('login'))
+            flash('I get here when its a post')
+        else:
+            accountInfo = helpers_nov18.get_account_info(conn, session.get('uid'))
+            organizer_id = session.get('uid')
+            username = session.get('username')
+            user_email = accountInfo.get('email')
 
+            #we will always need the below information
+            event_name = request.form.get("event_name")
+            event_type = request.form.get("event_type")
+            short_description = request.form.get("short_desc")
+            event_date = request.form.get("event_date")
+            start_time = request.form.get("start_time")
+            end_time = request.form.get("end_time")
+            event_location = request.form.get("event_location")
+            rsvp = request.form.get("rsvp_required")
+            full_description= request.form.get("full_desc")
+            contact_email = request.form.get("contact_email")
+            #spam = request.form.get("event_image")
+            
+            #get the tags as a list
+            #but when we insert this field into the table, we want it as a string with each tag 
+            #separated by a comma (e.g., "academic,sport,cultural")
+            event_tags_list = request.form.getlist("event_tags")
+            if event_tags_list: 
+                event_tags = ','.join(event_tags_list)
+            else: 
+                event_tags = None
+            
+            #first insert the event without the spam 
+            #helpers_nov18.insert_event_data returns the event_id of the newly inserted event
+            event_id = helpers_nov18.insert_event_data(conn, organizer_id, username, 
+                                        user_email, event_name, event_type, 
+                                        short_description, event_date, start_time, 
+                                        end_time, event_location, rsvp, event_tags, 
+                                        full_description, contact_email, None)
 
-        #we will always need the below information
-        event_name = request.form.get("event_name")
-        event_type = request.form.get("event_type")
-        short_description = request.form.get("short_desc")
-        event_date = request.form.get("event_date")
-        start_time = request.form.get("start_time")
-        end_time = request.form.get("end_time")
-        event_location = request.form.get("event_location")
-        rsvp = request.form.get("rsvp_required")
-        full_description= request.form.get("full_desc")
-        contact_email = request.form.get("contact_email")
-        #spam = request.form.get("event_image")
+            #if spam was uploaded, upload it to the uploads folder with a unique name
+            f = request.files['event_image']
+            if f: 
+                try:
+                    nm = int(organizer_id) # may throw error
+                    user_filename = f.filename
+                    ext = user_filename.split('.')[-1]
+                    timestamp = int(time.time()) 
+                    filename = secure_filename('{}_{}.{}'.format(nm,timestamp,ext))
+                    pathname = os.path.join(app.config['UPLOADS'],filename)
+                    f.save(pathname)
+                    flash('Upload successful')
+                except Exception as err:
+                    flash('Upload failed {why}'.format(why=err))
+                    return render_template('create_event.html')
+            else: 
+                pathname = None
+
+            #finally, insert the path for the spam
+            #want to do this separately at the end so that spam is not uploaded if 
+            #an event does not end up being created
+            helpers_nov18.insert_event_image(conn, event_id, pathname)
+            flash("Event successfully created.")
+            return redirect(url_for("create_event"))
         
-        #get the tags as a list
-        #but when we insert this field into the table, we want it as a string with each tag 
-        #separated by a comma (e.g., "academic,sport,cultural")
-        event_tags_list = request.form.getlist("event_tags")
-        if event_tags_list: 
-            event_tags = ','.join(event_tags_list)
-        else: 
-            event_tags = None
-        
-        #first insert the event without the spam 
-        #helpers_nov18.insert_event_data returns the event_id of the newly inserted event
-        event_id = helpers_nov18.insert_event_data(conn, organizer_id, username, 
-                                    user_email, event_name, event_type, 
-                                    short_description, event_date, start_time, 
-                                    end_time, event_location, rsvp, event_tags, 
-                                    full_description, contact_email, None)
-
-        #if spam was uploaded, upload it to the uploads folder with a unique name
-        f = request.files['event_image']
-        if f: 
-            try:
-                nm = int(organizer_id) # may throw error
-                user_filename = f.filename
-                ext = user_filename.split('.')[-1]
-                timestamp = int(time.time()) 
-                filename = secure_filename('{}_{}.{}'.format(nm,timestamp,ext))
-                pathname = os.path.join(app.config['UPLOADS'],filename)
-                f.save(pathname)
-                flash('Upload successful')
-            except Exception as err:
-                flash('Upload failed {why}'.format(why=err))
-                return render_template('create_event.html')
-        else: 
-            pathname = None
-
-        #finally, insert the path for the spam
-        #want to do this separately at the end so that spam is not uploaded if 
-        #an event does not end up being created
-        helpers_nov18.insert_event_image(conn, event_id, pathname)
-        flash("Event successfully created.")
-        return redirect(url_for("create_event"))
 
 
 @app.route('/all_events/')
@@ -167,10 +176,10 @@ def all_events_managed():
     else:
         flash('This was a GET') 
         conn = dbi.connect()
-        if session.get('logged_in') == False:
-            flash("You are not logged in, cannot display your events")
-            return redirect(url_for('index'))
-        elif session.get('logged_in') == True:
+        if session.get('uid') is None:
+            flash("You are not logged in, please log in to display your events")
+            return redirect(url_for('login'))
+        elif session.get('uid') is not None:
             userid = session.get('uid')
 
             #get events created by a certain user
@@ -362,10 +371,10 @@ def register():
             session['username'] = username
             session['uid'] = uid
             session['logged_in'] = True
-            session['visits'] = 1
+            #session['visits'] = 1
             return redirect( url_for('all_events_managed', page_title='Your events') )
             
-        #if the user clicked on the delete button
+        #if the user clicked on the register org button
         elif request.form.get('submit') == 'register_org': 
             flash(f"clicked register org")
             userInfo = request.form.to_dict()
@@ -390,7 +399,7 @@ def register():
             session['username'] = username
             session['uid'] = uid
             session['logged_in'] = True
-            session['visits'] = 1
+            #session['visits'] = 1
             return redirect( url_for('all_events_managed', page_title='Your events') )
 
             # #find event with this ID and delete the event
@@ -424,8 +433,8 @@ def login():
             username = request.form.get('username')
             passwd = request.form.get('password')
             conn = dbi.connect()
-            (ok, uid, email) = weeventlogin.login_user(conn, username, passwd)
-            print(uid)
+            (ok, uid) = weeventlogin.login_user(conn, username, passwd)
+            print("uid is ", uid)
             if not ok:
                 flash('login incorrect, please try again or join')
                 return redirect(url_for('login'))
@@ -434,8 +443,6 @@ def login():
             flash('successfully logged in as '+username)
             session['username'] = username
             session['uid'] = uid
-            session['email'] = email
-            session['logged_in'] = True
             #session['visits'] = 1 #don't think we need to keep track of this?
             return redirect( url_for('all_events_managed', username=username) )
 
@@ -454,7 +461,6 @@ def login():
 def logout():
     session['username'] = None
     session['uid'] = None
-    session['logged_in'] = False
     return redirect(url_for('index'))
 
 if __name__ == '__main__':

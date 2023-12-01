@@ -240,7 +240,23 @@ def update_event(conn, formData, eventID):
 #         select * from eventcreated where eventid = %s;
 #         ''', [event_id]
 #     )
-#     return curs.fetchone() 
+#     return curs.fetchone()
+
+#just gets info from account table, doesnt get personal or org specific data
+def get_account_info(conn, userID):
+    """
+    Gets basic account info with the given account ID
+    This info includes userid, username, usertype, and email (does not include hashed passwd)
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        """
+        select userid, username, usertype, email from account
+        where userid = %s;
+        """, [userID]
+    )
+    accountInfo = curs.fetchone()
+    return accountInfo
 
 def delete_event(conn, eventID):
     """
