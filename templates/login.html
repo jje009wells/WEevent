@@ -1,13 +1,12 @@
 {% extends "base.html" %}
 
 {% block main_content %}
-<h1>Register</h1>
+<h1>Login</h1>
 
 <p>Please login:</p>
 
 
 <form id="loginform" action="{{url_for('login')}}" method="post">
-    <h2>Login</h2>
     <p><label>Username: <input type="text" name="username" required pattern="^\w+$"></label></p>
     <p><label>Password: <input type="password" name="password" required></label></p>
     <p><button type="submit" name="submit" value="login">Submit</button></p>
@@ -28,11 +27,6 @@ $("#joinform").on('submit', function (event) {
 });
 </script>
 {% endblock %}
-
-
-
-
-
 
 
 <form id="loginform" action="{{url_for('login')}}" method="post">

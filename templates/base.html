@@ -10,7 +10,12 @@
     {% block head_stuff %} {% endblock %}
 </head>
 
-<body>         
+<body>
+<p>{% if session.username %}
+    You are logged in as {{ session.username }} <a href="{{ url_for('logout') }}">logout</a>.
+  {% else %}
+    You are not logged in. <a href="{{ url_for('login') }}">login</a>.
+  {% endif %}</p>         
 {% block nav %}
 <nav>
   <ul>
@@ -38,6 +43,7 @@
 {% block main_content %}
 <h1>Welcome!</h1>
 {% endblock %}
+
 
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 {% block end_scripts %}{% endblock %}

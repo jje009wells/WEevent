@@ -42,27 +42,27 @@ and either false or an exception object.
                 print('some other error!')
             return (False, False, err)
 
-# def login_user(conn, username, password):
-#     '''tries to log the user in given username & password. 
-# Returns True if success and returns the uid as the second value.
-# Otherwise, False, False.'''
-#     curs = dbi.cursor(conn)
-#     curs.execute('''SELECT uid, hashed FROM userpass 
-#                     WHERE username = %s''',
-#                  [username])
-#     row = curs.fetchone()
-#     if row is None:
-#         # no such user
-#         return (False, False)
-#     uid, hashed = row
-#     hashed2_bytes = bcrypt.hashpw(password.encode('utf-8'),
-#                                   hashed.encode('utf-8'))
-#     hashed2 = hashed2_bytes.decode('utf-8')
-#     if hashed == hashed2:
-#         return (True, uid)
-#     else:
-#         # password incorrect
-#         return (False, False)
+def login_user(conn, username, password):
+    '''tries to log the user in given username & password. 
+Returns True if success and returns the uid as the second value.
+Otherwise, False, False.'''
+    curs = dbi.cursor(conn)
+    curs.execute('''SELECT username, hashedp FROM account 
+                    WHERE username = %s''',
+                 [username])
+    row = curs.fetchone()
+    if row is None:
+        # no such user
+        return (False, False)
+    uid, hashed = row
+    hashed2_bytes = bcrypt.hashpw(password.encode('utf-8'),
+                                  hashed.encode('utf-8'))
+    hashed2 = hashed2_bytes.decode('utf-8')
+    if hashed == hashed2:
+        return (True, uid)
+    else:
+        # password incorrect
+        return (False, False)
 
 def delete_user(conn, id):
     curs = dbi.cursor(conn)

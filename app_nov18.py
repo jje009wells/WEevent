@@ -124,6 +124,36 @@ def all_events():
     return render_template('all_events.html', 
             events = events)
 
+# @app.route('/all_events_managed/', methods=['GET', 'POST'])
+# def all_events_managed():
+#     '''
+#     Renders a page that given an organizerid, displays the event names of 
+#     all events created by that organizer
+#     '''
+#     if request.method == 'POST':
+#         userid = request.form.get('userid')
+#         conn = dbi.connect()
+
+#         #get events created by a certain user
+#         #want to enforce that only the organizer can manage (update/delete) events
+#         #will modify this code after addinging in login functionality
+#         events = helpers_nov18.get_events_by_user(conn, userid)
+
+#         if events:
+#             return render_template('all_events_managed.html', page_title='All Events', data=events)
+#         else:
+#             flash('You have not created any events.')
+#             return redirect(url_for('all_events_managed'))
+    
+#     #if get request, ask the user to input user_id 
+#     else: 
+#         return render_template('input_user_id.html') 
+
+
+
+# new version of all events managed that handles the fact that you can log in
+# needs to be checked more
+
 @app.route('/all_events_managed/', methods=['GET', 'POST'])
 def all_events_managed():
     '''
@@ -131,23 +161,25 @@ def all_events_managed():
     all events created by that organizer
     '''
     if request.method == 'POST':
-        userid = request.form.get('userid')
+        flash('This was a POST')
+        #will it ever be a post now that we do not get here via a form?
+    #if get request, ask the user to input user_id 
+    else:
+        flash('This was a GET') 
         conn = dbi.connect()
+        userid = session.get('uid')
 
         #get events created by a certain user
         #want to enforce that only the organizer can manage (update/delete) events
-        #will modify this code after addinging in login functionality
+        #will modify this code after adding in login functionality
         events = helpers_nov18.get_events_by_user(conn, userid)
-
         if events:
             return render_template('all_events_managed.html', page_title='All Events', data=events)
         else:
-            flash('You have not created any events.')
-            return redirect(url_for('all_events_managed'))
-    
-    #if get request, ask the user to input user_id 
-    else: 
-        return render_template('input_user_id.html') 
+            flash('You have not created any events yet.')
+            # return redirect(url_for('index'))
+            return render_template('all_events_managed.html', page_title='All Events', data=events)
+
 
 @app.route('/event/<int:event_id>/')
 def event(event_id):
@@ -325,45 +357,6 @@ def register():
             session['visits'] = 1
             return redirect( url_for('all_events_managed', page_title='Your events') )
             
-
-
-            # #convert list of tags into 1 str for easy passing
-            # event_tags_list = request.form.getlist("event_tags")
-            # if event_tags_list: 
-            #     event_tags = ','.join(event_tags_list)
-            # else: 
-            #     event_tags = 'None'
-
-            # #store all the updated information in one dictionary
-            # eventDictToPass = request.form.to_dict()            
-            # eventDictToPass['event_tags'] = event_tags
-            # print(eventDictToPass)
-
-            # #if user wants to upload a new image, give the newly uploaded file a new filename, 
-            # #put it in the uploads folder, and add the new path to the dictionary
-            # f = request.files['event_image']
-            # if f: 
-            #     try:
-            #         nm = int(eventID) # may throw error
-            #         user_filename = f.filename
-            #         ext = user_filename.split('.')[-1]
-            #         timestamp = int(time.time()) 
-            #         filename = secure_filename('{}_{}.{}'.format(nm,timestamp,ext))
-            #         print(filename)
-            #         pathname = os.path.join(app.config['UPLOADS'],filename)
-            #         print(pathname)
-            #         f.save(pathname)
-            #         flash('Upload successful')
-            #     except Exception as err:
-            #         flash('Upload failed {why}'.format(why=err))
-            #         return render_template('create_event.html')
-            # else: 
-            #     pathname = None
-            # eventDictToPass['event_image'] = pathname
-        
-            # eventDict = helpers_nov18.update_event(conn, eventDictToPass, eventID)
-            # flash(f"Event updated successfully.")
-           
         #if the user clicked on the delete button
         elif request.form.get('submit') == 'register_org': 
             flash(f"clicked register org")
@@ -375,14 +368,14 @@ def register():
             passwd1 = request.form.get('password1')
             passwd2 = request.form.get('password2')
             if passwd1 != passwd2:
-                flash('passwords do not match')
+                flash('Registration failed: passwords do not match')
                 return redirect( url_for('register'))
             #conn = dbi.connect()
             (uid, is_dup, other_err) = weeventlogin.insert_user(conn, userInfo)
             if other_err:
                 raise other_err
             if is_dup:
-                flash('Sorry; that username is taken')
+                flash('Registration failed: Sorry; that username is taken')
                 return redirect(url_for('register'))
             ## success
             flash('You were registered! FYI, you were issued UID {}'.format(uid))
@@ -405,19 +398,54 @@ def register():
     #if get request, display the update page for the event
     elif request.method == 'GET':
         flash(f"this was a GET")
-        # eventDict = helpers_nov18.get_event_by_id(conn, eventID)
-        # event_tags = eventDict.get("eventtag")
-
-        # if eventDict == None: #Shouldn't happen
-        #     flash('Error: eventDict is empty with this eventID')
-        #     return redirect(url_for('index'))
 
     return render_template('register_account.html', page_title='Register an Account')
 
 
 @app.route('/login/', methods=['GET','POST'])
 def login():
-    return render_template('login.html', page_title='Login')
+    '''
+    Shows a form for registering an account with our DB, can choose to submit either the personal account or the org account
+    '''
+    #conn = dbi.connect()
+
+    if request.method == 'POST':
+        #if the user clicked on the register personal
+        if request.form.get('submit') == 'login': 
+            # get the info from the personal account form
+            username = request.form.get('username')
+            passwd = request.form.get('password')
+            conn = dbi.connect()
+            (ok, uid) = weeventlogin.login_user(conn, username, passwd)
+            if not ok:
+                flash('login incorrect, please try again or join')
+                return redirect(url_for('login'))
+            ## success
+            print('LOGIN', username)
+            flash('successfully logged in as '+username)
+            session['username'] = username
+            session['uid'] = uid
+            session['logged_in'] = True
+            #session['visits'] = 1 #don't think we need to keep track of this?
+            return redirect( url_for('all_events_managed', username=username) )
+
+            
+        #if the user clicked on the delete button
+        else: #value was not login, shouldn't get here 
+            flash(f"login button was not clicked, shouldn't get here?")
+
+    #if get request, display the update page for the event
+    elif request.method == 'GET':
+        flash(f"this was a GET")
+        return render_template('login.html', page_title='Login')
+
+# Not sure when best to use this?
+@app.route("/logout")
+def logout():
+    session['username'] = None
+    session['uid'] = None
+    session['logged_in'] = False
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     import sys, os
