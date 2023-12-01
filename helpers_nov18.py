@@ -3,7 +3,7 @@
 from flask import flash
 
 import cs304dbi as dbi
-import os
+import os, bcrypt
 
 def insert_event_data(conn, organizer_id, username, user_email, event_name, 
                         event_type, short_description, event_date, start_time, end_time, 
@@ -257,7 +257,7 @@ def delete_event(conn, eventID):
 
 
 if __name__ == '__main__':
-    database = 'weevent_db' #team db
-    #database = os.getlogin() + '_db'
+    #database = 'weevent_db' #team db
+    database = os.getlogin() + '_db'
     dbi.conf(database)
     conn = dbi.connect()
