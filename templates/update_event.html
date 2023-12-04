@@ -98,6 +98,12 @@
               <label><input type="checkbox" name="event_tags" value="career"> Career</label>
             {% endif %}
 
+            {% if 'performance' in event_tags %}
+              <label><input type="checkbox" name="event_tags" value="performance" checked> Performance</label>
+            {% else %}
+              <label><input type="checkbox" name="event_tags" value="performance"> Performance</label>
+            {% endif %}
+
             {% if 'other' in event_tags %}
               <label><input type="checkbox" name="event_tags" value="other" checked> Other</label>
             {% else %}

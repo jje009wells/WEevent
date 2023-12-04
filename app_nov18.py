@@ -68,7 +68,7 @@ def create_event():
 
             #we will always need the below information
             event_name = request.form.get("event_name")
-            event_type = request.form.get("event_type")
+            event_type = accountInfo.get("usertype") # user should not be able to enter this theirself
             short_description = request.form.get("short_desc")
             event_date = request.form.get("event_date")
             start_time = request.form.get("start_time")
@@ -76,7 +76,7 @@ def create_event():
             event_location = request.form.get("event_location")
             rsvp = request.form.get("rsvp_required")
             full_description= request.form.get("full_desc")
-            contact_email = request.form.get("contact_email")
+            contact_email = user_email # This should probably just be the user's own account email
             #spam = request.form.get("event_image")
             
             #get the tags as a list
@@ -187,11 +187,11 @@ def all_events_managed():
             #will modify this code after adding in login functionality
             events = helpers_nov18.get_events_by_user(conn, userid)
             if events:
-                return render_template('all_events_managed.html', page_title='All Events', data=events)
+                return render_template('all_events_managed.html', page_title='All Your Events', data=events)
             else:
                 flash('You have not created any events yet.')
                 # return redirect(url_for('index'))
-                return render_template('all_events_managed.html', page_title='All Events', data=events)
+                return render_template('all_events_managed.html', page_title='All Your Events', data=events)
         else:
             flash("You are not logged in nor logged out, but a secret third thing")
             return redirect(url_for('index'))
@@ -353,26 +353,26 @@ def register():
             userInfo['user_type'] = 'personal'
             print(userInfo)
 
-            username = request.form.get('username')
-            passwd1 = request.form.get('password1')
-            passwd2 = request.form.get('password2')
-            if passwd1 != passwd2:
-                flash('passwords do not match')
-                return redirect( url_for('register'))
-            #conn = dbi.connect()
-            (uid, is_dup, other_err) = weeventlogin.insert_user(conn, userInfo)
-            if other_err:
-                raise other_err
-            if is_dup:
-                flash('Sorry; that username is taken')
-                return redirect(url_for('register'))
-            ## success
-            flash('You were registered! FYI, you were issued UID {}'.format(uid))
-            session['username'] = username
-            session['uid'] = uid
-            session['logged_in'] = True
-            #session['visits'] = 1
-            return redirect( url_for('all_events_managed', page_title='Your events') )
+            # username = request.form.get('username')
+            # passwd1 = request.form.get('password1')
+            # passwd2 = request.form.get('password2')
+            # if passwd1 != passwd2:
+            #     flash('passwords do not match')
+            #     return redirect( url_for('register'))
+            # #conn = dbi.connect()
+            # (uid, is_dup, other_err) = weeventlogin.insert_user(conn, userInfo)
+            # if other_err:
+            #     raise other_err
+            # if is_dup:
+            #     flash('Sorry; that username is taken')
+            #     return redirect(url_for('register'))
+            # ## success
+            # flash('You were registered! FYI, you were issued UID {}'.format(uid))
+            # session['username'] = username
+            # session['uid'] = uid
+            # session['logged_in'] = True
+            # #session['visits'] = 1
+            # return redirect( url_for('all_events_managed', page_title='Your events') )
             
         #if the user clicked on the register org button
         elif request.form.get('submit') == 'register_org': 
@@ -381,36 +381,52 @@ def register():
             userInfo['user_type'] = 'org'
             print(userInfo)
 
-            username = request.form.get('username')
-            passwd1 = request.form.get('password1')
-            passwd2 = request.form.get('password2')
-            if passwd1 != passwd2:
-                flash('Registration failed: passwords do not match')
-                return redirect( url_for('register'))
-            #conn = dbi.connect()
-            (uid, is_dup, other_err) = weeventlogin.insert_user(conn, userInfo)
-            if other_err:
-                raise other_err
-            if is_dup:
-                flash('Registration failed: Sorry; that username is taken')
-                return redirect(url_for('register'))
-            ## success
-            flash('You were registered! FYI, you were issued UID {}'.format(uid))
-            session['username'] = username
-            session['uid'] = uid
-            session['logged_in'] = True
-            #session['visits'] = 1
-            return redirect( url_for('all_events_managed', page_title='Your events') )
+            # username = request.form.get('username')
+            # passwd1 = request.form.get('password1')
+            # passwd2 = request.form.get('password2')
+            # if passwd1 != passwd2:
+            #     flash('Registration failed: passwords do not match')
+            #     return redirect( url_for('register'))
+            # #conn = dbi.connect()
+            # (uid, is_dup, other_err) = weeventlogin.insert_user(conn, userInfo)
+            # if other_err:
+            #     raise other_err
+            # if is_dup:
+            #     flash('Registration failed: Sorry; that username is taken')
+            #     return redirect(url_for('register'))
+            # ## success
+            # flash('You were registered! FYI, you were issued UID {}'.format(uid))
+            # session['username'] = username
+            # session['uid'] = uid
+            # #session['email'] = accountInfo.get('email')
+            # # session['logged_in'] = True
+            # #session['visits'] = 1
+            # return redirect( url_for('all_events_managed', page_title='Your events') )
 
-            # #find event with this ID and delete the event
-            # eventDict = helpers_nov18.get_event_by_id(conn, eventID)
-            # helpers_nov18.delete_event(conn, eventID)
-            # flash(f"Event ({eventDict.get('eventname')}) was deleted successfully")
-            # return redirect(url_for('index'))
+            
         else: #neither
             userInfo = request.form.to_dict()
             print(userInfo)
             flash(f"probs shouldn't get here")
+        
+        username = request.form.get('username')
+        passwd1 = request.form.get('password1')
+        passwd2 = request.form.get('password2')
+        if passwd1 != passwd2:
+            flash('passwords do not match')
+            return redirect( url_for('register'))
+        #conn = dbi.connect()
+        (uid, is_dup, other_err) = weeventlogin.insert_user(conn, userInfo)
+        if other_err:
+            raise other_err
+        if is_dup:
+            flash('Sorry; that username is taken')
+            return redirect(url_for('register'))
+        ## success
+        flash('You were registered! FYI, you were issued UID {}'.format(uid))
+        session['username'] = username
+        session['uid'] = uid
+        return redirect( url_for('all_events_managed', page_title='Your events') )
 
     #if get request, display the update page for the event
     elif request.method == 'GET':
@@ -443,6 +459,7 @@ def login():
             flash('successfully logged in as '+username)
             session['username'] = username
             session['uid'] = uid
+            #session['email'] = accountInfo.get('email')
             #session['visits'] = 1 #don't think we need to keep track of this?
             return redirect( url_for('all_events_managed', username=username) )
 
@@ -461,6 +478,7 @@ def login():
 def logout():
     session['username'] = None
     session['uid'] = None
+    #session['email'] = None
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
