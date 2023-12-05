@@ -39,6 +39,7 @@
     {% for event in events %}
     <li>
       <strong>{{ event.eventname }}</strong><br>
+      Organizer: {{ event.username }} <br>
       Location: {{ event.eventloc }}<br>
       Description: {{ event.shortdesc }}<br>
       Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>

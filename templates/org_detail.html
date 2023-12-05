@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+  <div class="org-details-container">
+    <h1>{{ org.username }}</h1>
+    <p><strong>E-board:</strong> {{ org.e_board }}</p>
+    <p><strong>Org info:</strong> {{ org.orginfo }}</p>
+    <p><strong>Events:</strong> {{ event.eventtype }} </p>
+    <p><strong>Org ID (for testing purposes only):</strong> {{ org.userid }} </p>
+    <p><strong>Org Email:</strong> <a href="mailto:{{ org.email }}">{{ org.email }}</a></p>
+
+    <ul class="event-list">
+      {% for event in org_event %}
+      <li>
+        <strong>{{ event.eventname }}</strong><br>
+        Location: {{ event.eventloc }}<br>
+        Description: {{ event.shortdesc }}<br>
+        Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
+        Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
+        Type: {{ event.eventtype }} <br>
+        Tags: {{ event.eventtag }} <br>
+        <a href="/event/{{ event.eventid }}">Click for details</a>
+      </li>
+      {% endfor %}
+    </ul>
+    
+  </div>
+{% endblock %}
