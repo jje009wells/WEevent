@@ -19,6 +19,7 @@
         Type: {{ event.eventtype }} <br>
         Tags: {{ event.eventtag }} <br>
         <a href="/event/{{ event.eventid }}">Click for details</a>
+        <a href="{{ url_for('view_rsvp_details', event_id = event.eventid)}}">Attendees</a>
       </li>
       {% endfor %}
     </ul>
