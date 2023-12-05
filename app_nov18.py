@@ -219,6 +219,22 @@ def event(event_id):
         flash('Event not found.')
         return redirect(url_for('index'))
 
+@app.route('/org/<int:userid>/')
+def org():
+    '''
+    Renders the org details page for an org
+    '''
+    conn = dbi.connect()
+    userid = session.get('userid')
+    org = helpers_nov18.get_org_by_userid(conn, userid)  
+    org_event = helpers_nov18.get_orgevents(conn,userid)
+
+    if org:
+        return render_template('org_detail.html', org=org, org_event = org_event)
+    else:
+        flash('Org not found.')
+        return redirect(url_for('index'))
+
 @app.route('/filter_events/', methods=['GET', 'POST'])
 def filter_events():
     '''
