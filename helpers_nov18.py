@@ -117,6 +117,25 @@ def get_event_by_id(conn, event_id):
     )
     return curs.fetchone()  # Returns a single event object or None if not found
 
+def get_org_by_userid(conn, userid):
+    '''
+    Gets a specific org by its userid.
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''
+        select * from org_account where userid = %s and username in (select username from account where userid = %s);
+        ''', [userid])
+    return curs.fetchone()  # Returns a single event object or None if not found
+
+def get_orgevents(conn, userid):
+    '''
+    Gets events created by this org
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''select * from eventcreated 
+                 where organizerid in (select userid from account where username = %s)''', [int(userid)])
+    return curs.fetchall()
 
 def get_filtered_events(conn, filters):
     '''
