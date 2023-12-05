@@ -119,7 +119,7 @@ def get_event_by_id(conn, event_id):
 
 def get_org_by_userid(conn, userid):
     '''
-    Gets a sepcific event by its event_id.
+    Gets a specific org by its userid.
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
