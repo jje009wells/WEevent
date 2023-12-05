@@ -248,23 +248,37 @@ def event(event_id):
     # else:
     #     flash('Event not found.')
     #     return redirect(url_for('index'))
-    
-@app.route('/org/<int:userid>/')
-def org():
+
+@app.route('/profile/')
+def profile():
     '''
-    Renders the org details page for an org
+    Renders the profile page based on the user type.
     '''
     conn = dbi.connect()
-    userid = session.get('userid')
-    org = helpers_nov18.get_org_by_userid(conn, userid)  
-    org_event = helpers_nov18.get_orgevents(conn,userid)
 
-    if org:
-        return render_template('org_detail.html', org=org, org_event = org_event)
+    # Retrieve the userid and usertype from the session
+    userid = session.get('uid')
+    usertype = helpers_nov18.get_usertype(conn,userid)
+
+    if usertype == 'org':
+        # Fetch organization details and render the organization profile template
+        org = helpers_nov18.get_org_by_userid(conn, userid)
+        org_event = helpers_nov18.get_events_by_user(conn, userid)
+        return render_template('org_profile.html', org=org, org_event=org_event)
+
+    elif usertype == 'personal':
+        # Fetch personal account details and render the personal user profile template
+        # Assuming you have a function to get personal account details
+        user = helpers_nov18.get_user_by_userid(conn, userid)
+        events_created = helpers_nov18.get_events_by_user(conn, userid)
+        events_attending = helpers_nov18.get_eventsid_attending(conn,userid)
+        return render_template('user_profile.html', user=user, events_created = events_created, events_attending = events_attending)
+
     else:
-        flash('Org not found.')
+        flash('Invalid user type.')
         return redirect(url_for('index'))
 
+    
 @app.route('/filter_events/', methods=['GET', 'POST'])
 def filter_events():
     '''
@@ -472,7 +486,7 @@ def register():
         flash('You were registered! FYI, you were issued UID {}'.format(uid))
         session['username'] = username
         session['uid'] = uid
-        return redirect( url_for('all_events_managed', page_title='Your events') )
+        return redirect( url_for('profile' ))
 
     #if get request, display the update page for the event
     elif request.method == 'GET':
@@ -507,7 +521,7 @@ def login():
             session['uid'] = uid
             #session['email'] = accountInfo.get('email')
             #session['visits'] = 1 #don't think we need to keep track of this?
-            return redirect( url_for('all_events_managed', username=username) )
+            return redirect( url_for('profile') )
 
             
         #if the user clicked on the delete button
@@ -518,6 +532,7 @@ def login():
     elif request.method == 'GET':
         flash(f"this was a GET")
         return render_template('login.html', page_title='Login')
+
 
 # Not sure when best to use this?
 @app.route("/logout")

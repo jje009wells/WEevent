@@ -2,6 +2,13 @@
 
 <!--Displays all details of an event-->
 {% block main_content %}
+<nav>
+  <ul>
+    <li><a href="{{ url_for('filter_events') }}">Filter Events</a></li>
+    <li><a href="{{ url_for('search_events') }}">Search Events</a></li>
+  </ul>
+</nav>
+
   <div class="event-details-container">
     <h1>{{ event.eventname }}</h1>
     <p><strong>Date:</strong> {{ event.eventdate }}</p>
@@ -29,6 +36,7 @@
       <img src="{{ url_for('uploads', filename=filename) }}" alt="Event Image">
     {% endif %}
 
+    <button onclick="history.back();">Back to Last Page</button>
 
   </div>
 {% endblock %}

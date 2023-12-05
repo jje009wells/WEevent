@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+  <div class="org-details-container">
+    <h1>{{ user.username }}</h1>
+    <p><strong>Email:</strong> <a href="mailto:{{ user.email }}">{{ user.email }}</a></p>
+    <p><strong>Org ID (for testing purposes only):</strong> {{ user.userid }} </p>
+
+
+    <ul class="event-list">
+      <h2>Events Created:</h2>
+      {% for event in events_created %}
+      <li>
+        <strong>{{ event.eventname }}</strong><br>
+        Location: {{ event.eventloc }}<br>
+        Description: {{ event.shortdesc }}<br>
+        Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
+        Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
+        Type: {{ event.eventtype }} <br>
+        Tags: {{ event.eventtag }} <br>
+        <a href="/event/{{ event.eventid }}">Click for details</a>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <ul class="event-list">
+        <h2>Events Attending:</h2>
+        {% for event in events_attending %}
+        <li>
+          <strong>{{ event.eventname }}</strong><br>
+          Location: {{ event.eventloc }}<br>
+          Description: {{ event.shortdesc }}<br>
+          Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
+          Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
+          Type: {{ event.eventtype }} <br>
+          Tags: {{ event.eventtag }} <br>
+          <a href="/event/{{ event.eventid }}">Click for details</a>
+        </li>
+        {% endfor %}
+      </ul>
+    
+  </div>
+{% endblock %}

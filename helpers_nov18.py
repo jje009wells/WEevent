@@ -119,23 +119,58 @@ def get_event_by_id(conn, event_id):
 
 def get_org_by_userid(conn, userid):
     '''
-    Gets a specific org by its userid.
+    Gets specfics org info of an org by their userid.
+    Used for Org Profile. 
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''
-        select * from org_account where userid = %s and username in (select username from account where userid = %s);
-        ''', [userid])
+        SELECT org_account.userid, org_account.eboard, org_account.orginfo, account.username, account.email 
+        FROM org_account 
+        JOIN account ON org_account.userid = account.userid 
+        WHERE org_account.userid = %s;
+        ''', [int(userid)])
     return curs.fetchone()  # Returns a single event object or None if not found
 
-def get_orgevents(conn, userid):
+def get_user_by_userid(conn,userid):
     '''
-    Gets events created by this org
+    Gets specfics info of a user by their userid.
+    Used for User Profile. 
     '''
     curs = dbi.dict_cursor(conn)
-    curs.execute('''select * from eventcreated 
-                 where organizerid in (select userid from account where username = %s)''', [int(userid)])
+    curs.execute(
+        '''
+        SELECT userid, username, email 
+        FROM account 
+        WHERE userid = %s;
+        ''', [int(userid)])
+    return curs.fetchone() 
+
+def get_eventsid_attending(conn, userid):
+    '''
+    Gets events user RSVPed to by userid.
+    Used for User Profile. 
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''
+        select * from eventcreated, registration where registration.participant = %s and eventcreated.eventid = registration.eventid;
+        ''', [userid]
+    )
     return curs.fetchall()
+
+def get_usertype(conn, userid):
+    '''
+    Gets usertype by userid
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''
+        select usertype from account where userid = %s
+        ''', [userid])
+    usertype = curs.fetchone()
+    usertype = usertype.get('usertype')
+    return usertype
 
 def get_filtered_events(conn, filters):
     '''
@@ -310,7 +345,7 @@ def insert_registration(conn, event_id, user_id):
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''insert into registration (eventid, participant) values (%s, %s);
-        ''', [event_id, uid]
+        ''', [event_id, user_id]
     )
     conn.commit()
     return 'Registration inserted'
