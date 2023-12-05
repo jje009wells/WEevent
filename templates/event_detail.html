@@ -12,6 +12,17 @@
     <p><strong>Description:</strong> {{ event.fulldesc }}</p>
     <p><strong>Contact Email:</strong> <a href="mailto:{{ event.contactemail }}">{{ event.contactemail }}</a></p>
     <p><strong>RSVP:</strong> {{ 'Required' if event.rsvp == 'yes' else 'Not Required' }}</p>
+    
+    {% if event.rsvp == 'yes' %}
+      {% if usertype == 'org' %}
+        <p>To RSVP, please use a personal account.</p>
+      {% else %}
+        <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">
+          <button type="submit">RSVP</button>
+        </form>
+        {% endif %}
+    {% endif %}
+
     <p><strong>Tags:</strong> {{ event.eventtag }}</p>
     
     {% if filename %}

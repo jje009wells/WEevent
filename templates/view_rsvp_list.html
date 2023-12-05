@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<h1>All Events (Click to update event)</h1>
+<ul>
+    {% for event in rsvp_required_events %}
+        <li><a href="{{url_for('view_rsvp_details', event_id=event.eventid)}}"> RSVP list for {{event.eventname}}</li>
+    {% endfor %}
+</ul>
+
+{% endblock %}

@@ -15,16 +15,17 @@
     <ul class="event-list">
         {% for event in events %}
         <li>
-            <strong>{{ event.eventname }}</strong><br>
-            Location: {{ event.eventloc }}<br>
-            Description: {{ event.shortdesc }}<br>
-            Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
-            Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
-            Type: {{ event.eventtype }} <br>
-            Tags: {{ event.eventtag }} <br>
-            <a href="/event/{{ event.eventid }}">Click for details</a>
-          </li>
+          <strong>{{ event.eventname }}</strong><br>
+          Organizer: {{ event.username }} <br>
+          Location: {{ event.eventloc }}<br>
+          Description: {{ event.shortdesc }}<br>
+          Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
+          Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
+          Type: {{ event.eventtype }} <br>
+          Tags: {{ event.eventtag }} <br>
+          <a href="/event/{{ event.eventid }}">Click for details</a>
+        </li>
         {% endfor %}
-      </ul>
+    </ul>
     
 {% endblock %}

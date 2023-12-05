@@ -8,6 +8,7 @@
     {% for event in data %}
         <li><a href="{{url_for('update', eventID=event.eventid)}}">{{event.eventname}}</li>
     {% endfor %}
+    <li><a href="{{ url_for('view_rsvp_list') }}">Check rsvp status of events requiring rsvp </a></li>
 </ul>
 
 {% endblock %}

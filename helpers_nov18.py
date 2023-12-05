@@ -98,7 +98,7 @@ def get_homepage_events(conn):
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''
-        select * from eventcreated;
+        select * from eventcreated join account on (eventcreated.organizerid = account.userid);
         '''
     )
     return curs.fetchall()
@@ -255,8 +255,7 @@ def get_account_info(conn, userID):
         where userid = %s;
         """, [userID]
     )
-    accountInfo = curs.fetchone()
-    return accountInfo
+    return curs.fetchone()
 
 def delete_event(conn, eventID):
     """
@@ -271,6 +270,59 @@ def delete_event(conn, eventID):
     )
     conn.commit() # Makes the deletion permanent
 
+def rsvp_required(conn, event_id):
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''select rsvp from eventcreated where eventid = %s
+        ''', [event_id]
+    )
+    return curs.fetchone()
+
+def user_rsvp_status(conn, event_id, user_id):
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''
+        select * from registration where eventid = %s and participant = %s;
+        ''', [event_id, user_id]
+    )
+    return curs.fetchone() 
+
+def insert_registration(conn, event_id, user_id):
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''insert into registration (eventid, participant) values (%s, %s);
+        ''', [event_id, uid]
+    )
+    conn.commit()
+    return 'Registration inserted'
+
+def is_valid_filename(filename):
+    #filename pattern needs to match something like uploads/10_1700612634.png (id_timestamp.extension)
+    parts = filename.split('_') 
+    potential_uid = parts[0].split('/')[1]
+    potential_timestamp = parts[1].split('.')[0]
+
+    #flash(f'{parts}')
+    #flash(f'{potential_uid}')
+    #flash(f'{potential_timestamp}')
+
+    #check if the filename has at least two parts
+    if len(parts) != 2:
+        return False
+    #check if the first and second parts are numbers
+    if not (potential_uid.isdigit() and potential_uid.isdigit()): 
+        return False
+    return True 
+
+def get_rsvp_info(conn, event_id):
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''select eventid, userid, username, email from registration 
+        inner join account on (registration.participant = account.userid) 
+        where registration.eventid = %s;
+        ''', [event_id]
+    )
+    return curs.fetchall()
 
 if __name__ == '__main__':
     #database = 'weevent_db' #team db

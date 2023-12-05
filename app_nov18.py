@@ -53,15 +53,22 @@ def create_event():
             flash("You are not logged in, please log in to create an event!")
             return redirect(url_for('login'))
         else:
-            return render_template("create_event.html", method="POST")
+            uid = session['uid']
+            account_info = helpers_nov18.get_account_info(conn, userID=uid)
 
+            if account_info['usertype'] == 'org':
+                # If the user is an organization, hardcode 'type' field to 'org' in the form
+                return render_template("create_event.html", method="POST", eventtype='org')
+            else:
+                # If the user is an individual, hardcode 'type' field to 'personal' in the form
+                return render_template("create_event.html", method="POST", eventtype='personal')
     else:
         if session.get('uid') is None:
             flash("You are not logged in, please log in to create an event!")
             return redirect(url_for('login'))
             flash('I get here when its a post')
         else:
-            accountInfo = helpers_nov18.get_account_info(conn, session.get('uid'))
+            accountInfo = helpers_nov18.get_account_info(conn, userID=session.get('uid'))
             organizer_id = session.get('uid')
             username = session.get('username')
             user_email = accountInfo.get('email')
@@ -121,15 +128,14 @@ def create_event():
             flash("Event successfully created.")
             return redirect(url_for("create_event"))
         
-
-
 @app.route('/all_events/')
 def all_events():
     '''
     Renders a page that displays all events in the database with the most important info
     '''
     conn = dbi.connect()
-    events= helpers_nov18.get_homepage_events(conn)
+    events = helpers_nov18.get_homepage_events(conn)
+    
     return render_template('all_events.html', 
             events = events)
 
@@ -196,28 +202,52 @@ def all_events_managed():
             flash("You are not logged in nor logged out, but a secret third thing")
             return redirect(url_for('index'))
             
-
-
 @app.route('/event/<int:event_id>/')
 def event(event_id):
     '''
     Renders the event details page for an event
     '''
     conn = dbi.connect()
-    event = helpers_nov18.get_event_by_id(conn, event_id)  
+    event = helpers_nov18.get_event_by_id(conn, event_id) 
+
+    if session.get('uid') is None:
+        flash("You are not logged in, please log in to create an event!")
+        return redirect(url_for('login'))
+    else:
+        uid = session['uid']
+        account_info = helpers_nov18.get_account_info(conn, userID=uid)
+    
+    usertype = account_info['usertype']
 
     if event:
-        if event['spam'] is not None:
+        #in case the user directly types in the image in the url, need to check that the filename is secure
+        filename = event['spam']
 
-            #sample value in event['spam']: uploads/...jpeg
-            #want to strip out uploads so that the image can be displayed 
-            filename = event['spam'].split('/')[-1]
+        if filename: 
+            valid_filename = helpers_nov18.is_valid_filename(filename)
+            if not valid_filename:
+                flash("Filename not secure.")
+                return redirect(url_for('index'))
+            filename = filename.split('/')[-1]
         else:
             filename = None
-        return render_template('event_detail.html', event=event, filename=filename)
+
+        return render_template('event_detail.html', event=event, filename=filename, usertype=usertype)
     else:
         flash('Event not found.')
         return redirect(url_for('index'))
+
+    # if event:
+    #     if event['spam'] is not None:
+    #         #sample value in event['spam']: uploads/...jpeg
+    #         #want to strip out uploads so that the image can be displayed 
+    #         filename = event['spam'].split('/')[-1]
+    #     else:
+    #         filename = None
+    #     return render_template('event_detail.html', event=event, filename=filename)
+    # else:
+    #     flash('Event not found.')
+    #     return redirect(url_for('index'))
 
 @app.route('/filter_events/', methods=['GET', 'POST'])
 def filter_events():
@@ -443,6 +473,7 @@ def login():
             flash('successfully logged in as '+username)
             session['username'] = username
             session['uid'] = uid
+            print('UIDUIDUID', session['uid'])
             #session['visits'] = 1 #don't think we need to keep track of this?
             return redirect( url_for('all_events_managed', username=username) )
 
@@ -463,6 +494,65 @@ def logout():
     session['uid'] = None
     return redirect(url_for('index'))
 
+@app.route("/rsvp/<int:event_id>", methods=['POST'])
+def rsvp(event_id):
+    conn = dbi.connect()
+
+    user_id = session['uid']
+    print("User ID in session (RSVP route):", user_id)
+ 
+    rsvp_required = helpers_nov18.rsvp_required(conn, event_id)['rsvp']
+
+    #registration_status would be None if the user has not rsvped already
+    registration_status = helpers_nov18.user_rsvp_status(conn, event_id, user_id) 
+
+    if rsvp_required: 
+        if registration_status is None: 
+            helpers_nov18.insert_registration(conn, event_id, user_id)
+            flash('RSVP successful')
+        else: 
+            flash('You have already rsvped to the event')
+
+    #technically should not get here as the user would not see the button, but just to be safe...
+    else:
+        flash('RSVP is not required for this event.')
+    
+    return redirect(url_for('event', event_id=event_id))
+
+@app.route('/view_rsvp_list/')
+def view_rsvp_list():
+    conn = dbi.connect()
+    userid = session.get('uid')
+    curs = dbi.dict_cursor(conn)
+    accessible_events = helpers_nov18.get_events_by_user(conn, userid)
+
+    rsvp_required_events = []
+    for event in accessible_events:
+        if event['rsvp'] == 'yes':
+            rsvp_required_events.append(event)
+
+    return render_template('view_rsvp_list.html', rsvp_required_events=rsvp_required_events)
+
+@app.route('/view_rsvp_details/<int:event_id>')
+def view_rsvp_details(event_id):
+    conn = dbi.connect()
+    userid = session.get('uid')
+    
+    organizer_id = helpers_nov18.get_event_by_id(conn, event_id)['organizerid']
+
+    #technically should not get to here as the user is only shown events that they have created, but just to be safe
+    if userid != organizer_id:
+        flash("You do not have permission to view RSVP status for this event.")
+        return redirect(url_for('view_rsvp_list')) 
+
+    event_name = helpers_nov18.get_event_by_id(conn, event_id)['eventname']
+    rsvp_info = helpers_nov18.get_rsvp_info(conn, event_id)
+
+    if not rsvp_info:
+        flash('No one has rsvped yet')
+
+    return render_template('rsvp_details.html', rsvp_info=rsvp_info, event_name=event_name)
+    
 if __name__ == '__main__':
     import sys, os
     if len(sys.argv) > 1:

@@ -1,4 +1,4 @@
-use je100_db; 
+use vl100_db; 
 
 drop table if exists comment;
 drop table if exists registration;
