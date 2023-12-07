@@ -33,7 +33,10 @@ def index():
     '''
     Renders the homepage 
     '''
-    return render_template('main.html',title='Hello')
+    conn = dbi.connect()
+    events = helpers_nov18.get_homepage_events(conn)
+    
+    return render_template('all_events.html', events = events)
 
 @app.route('/uploads/<filename>/')
 def uploads(filename):
@@ -127,17 +130,6 @@ def create_event():
             helpers_nov18.insert_event_image(conn, event_id, pathname)
             flash("Event successfully created.")
             return redirect(url_for("create_event"))
-        
-@app.route('/all_events/')
-def all_events():
-    '''
-    Renders a page that displays all events in the database with the most important info
-    '''
-    conn = dbi.connect()
-    events = helpers_nov18.get_homepage_events(conn)
-    
-    return render_template('all_events.html', 
-            events = events)
 
 # @app.route('/all_events_managed/', methods=['GET', 'POST'])
 # def all_events_managed():
@@ -316,11 +308,11 @@ def filter_events():
 
         #fetch the events that match the filters via a helper function
         events = helpers_nov18.get_filtered_events(conn, filters)
-        return render_template('filter_events.html', events=events, filters=filters)
+        return render_template('all_events.html', events=events, filters=filters)
             
     else:
-        #if get request, load all events
-        return redirect(url_for('all_events'))
+        #if get request, load all events/homepage
+        return redirect(url_for('index'))
 
 @app.route('/search_events/', methods=['GET', 'POST'])
 def search_events():
@@ -333,11 +325,11 @@ def search_events():
         
         #fetch events whose eventname contain the search term via a helper function
         events = helpers_nov18.search_events(conn, search_term)
-        return render_template('search_events.html', events=events, search_term=search_term)
+        return render_template('all_events.html', events=events, search_term = search_term)
     
     #if get request, just display all the events
     else: 
-        redirect(url_for('all_events'))
+        redirect(url_for('index'))
 
 
 @app.route('/update/<int:eventID>', methods=['GET','POST'])

@@ -21,7 +21,6 @@
   <ul>
     <li><a href="{{ url_for('index') }}">Home</a></li>
     <li><a href="{{ url_for('create_event') }}">Create an Event</a></li>
-    <li><a href="{{ url_for('all_events') }}">View all events</a></li>
     <li><a href="{{ url_for('register') }}">Register Account</a></li>
     {% if session.uid %}
             <!-- Show Profile link only if user is logged in -->
