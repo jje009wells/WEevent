@@ -16,7 +16,7 @@
         {% for event in events %}
         <li>
           <strong>{{ event.eventname }}</strong><br>
-          Organizer: {{ event.username }} <br>
+          Organizer: Organizer: <a href="{{ url_for('profile', profile_user_id=event.organizerid) }}">{{ event.username }}</a><br>
           Location: {{ event.eventloc }}<br>
           Description: {{ event.shortdesc }}<br>
           Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>

@@ -47,7 +47,7 @@ ENGINE = InnoDB;
 CREATE TABLE person_interest (
   follower int,
   followed int, 
-  foreign key (follower) references account(userid) 
+  foreign key (followed) references account(userid) 
     on delete cascade
     on update cascade
 )

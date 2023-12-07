@@ -21,12 +21,12 @@
   <ul>
     <li><a href="{{ url_for('index') }}">Home</a></li>
     <li><a href="{{ url_for('create_event') }}">Create an Event</a></li>
-    <li><a href="{{ url_for('all_events_managed') }}">Manage your events</a></li>
     <li><a href="{{ url_for('all_events') }}">View all events</a></li>
-    <li><a href="{{ url_for('filter_events') }}">Filter Events</a></li>
-    <li><a href="{{ url_for('search_events') }}">Search Events</a></li>
     <li><a href="{{ url_for('register') }}">Register Account</a></li>
-    <li><a href="{{ url_for('profile') }}">Profile</a></li>
+    {% if session.uid %}
+            <!-- Show Profile link only if user is logged in -->
+            <li><a href="{{ url_for('profile', profile_user_id=session.uid) }}">Profile</a></li>
+    {% endif %}
   </ul>
 </nav>
 {% endblock %}

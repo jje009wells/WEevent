@@ -2,24 +2,67 @@
 
 {% block main_content %}
 <body>
-  <!--Displays all events with important information and link to view more details -->
-  
-  <h1>All Events</h1>
-  <ul class="event-list">
-    {% for event in events %}
-    <li>
-      <strong>{{ event.eventname }}</strong><br>
-      Organizer: {{ event.username }} <br>
-      Location: {{ event.eventloc }}<br>
-      Description: {{ event.shortdesc }}<br>
-      Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
-      Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
-      Type: {{ event.eventtype }} <br>
-      Tags: {{ event.eventtag }} <br>
-      <a href="/event/{{ event.eventid }}">Click for details</a>
-    </li>
-    {% endfor %}
-  </ul>
+    <h1>All Events</h1>
+
+    <!-- Search Bar -->
+    <form method="POST" action="{{ url_for('search_events') }}">
+        <input type="text" name="search" placeholder="Search events...">
+        <input type="submit" value="Search">
+    </form>
+
+    <!-- Filter Bar -->
+    <form method="POST" action="{{ url_for('filter_events') }}">
+        <!-- Date Filter -->
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date">
+
+        <!-- Type Filter -->
+        <label for="type">Type:</label>
+        <select id="type" name="type">
+            <option value="">Select Type</option>
+            <option value="personal">Personal</option>
+            <option value="org">Organization</option>
+        </select>
+
+        <!-- Organizer Name Filter -->
+        <label for="org_name">Org Name:</label>
+        <input type="text" id="org_name" name="org_name">
+
+        <!-- Event Tags Filter -->
+        <label for="event_tags">Event Tags (Optional)</label>
+        <div id="tag-checkboxes">
+            <label><input type="checkbox" name="event_tags" value="academic"> Academic</label>
+            <label><input type="checkbox" name="event_tags" value="sport"> Sport</label>
+            <label><input type="checkbox" name="event_tags" value="cultural"> Cultural</label>
+            <label><input type="checkbox" name="event_tags" value="religious"> Religious</label>
+            <label><input type="checkbox" name="event_tags" value="volunteering"> Volunteering</label>
+            <label><input type="checkbox" name="event_tags" value="career"> Career</label>
+            <label><input type="checkbox" name="event_tags" value="performance"> Performance</label>
+            <label><input type="checkbox" name="event_tags" value="other"> Other</label>
+        </div>
+
+        <label for="orgs_following"> Orgs following </label><br>
+        <input type="checkbox" id="orgs_following" name="orgs_following" value="orgs_following">
+        </div>
+
+        <input type="submit" value="Filter">
+    </form>
+
+    <!-- Displaying Events -->
+    <ul class="event-list">
+        {% for event in events %}
+        <li>
+            <strong>{{ event.eventname }}</strong><br>
+            Organizer: <a href="{{ url_for('profile', profile_user_id=event.organizerid) }}">{{ event.username }}</a><br>
+            Location: {{ event.eventloc }}<br>
+            Description: {{ event.shortdesc }}<br>
+            Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
+            Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
+            Type: {{ event.eventtype }} <br>
+            Tags: {{ event.eventtag }} <br>
+            <a href="/event/{{ event.eventid }}">Click for details</a>
+        </li>
+        {% endfor %}
+    </ul>
 </body>
-</html>
 {% endblock %}

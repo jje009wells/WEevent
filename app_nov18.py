@@ -168,39 +168,6 @@ def all_events():
 
 # new version of all events managed that handles the fact that you can log in
 # needs to be checked more
-
-@app.route('/all_events_managed/', methods=['GET', 'POST'])
-def all_events_managed():
-    '''
-    Renders a page that given an organizerid, displays the event names of 
-    all events created by that organizer
-    '''
-    if request.method == 'POST':
-        flash('This was a POST')
-        #will it ever be a post now that we do not get here via a form?
-    #if get request, ask the user to input user_id 
-    else:
-        flash('This was a GET') 
-        conn = dbi.connect()
-        if session.get('uid') is None:
-            flash("You are not logged in, please log in to display your events")
-            return redirect(url_for('login'))
-        elif session.get('uid') is not None:
-            userid = session.get('uid')
-
-            #get events created by a certain user
-            #want to enforce that only the organizer can manage (update/delete) events
-            #will modify this code after adding in login functionality
-            events = helpers_nov18.get_events_by_user(conn, userid)
-            if events:
-                return render_template('all_events_managed.html', page_title='All Your Events', data=events)
-            else:
-                flash('You have not created any events yet.')
-                # return redirect(url_for('index'))
-                return render_template('all_events_managed.html', page_title='All Your Events', data=events)
-        else:
-            flash("You are not logged in nor logged out, but a secret third thing")
-            return redirect(url_for('index'))
             
 @app.route('/event/<int:event_id>/')
 def event(event_id):
@@ -249,36 +216,86 @@ def event(event_id):
     #     flash('Event not found.')
     #     return redirect(url_for('index'))
 
-@app.route('/profile/')
-def profile():
+@app.route('/profile/<int:profile_user_id>/', methods=['GET'])
+@app.route('/profile/', methods=['GET'])
+def profile(profile_user_id=None):
     '''
     Renders the profile page based on the user type.
     '''
     conn = dbi.connect()
+    current_user_id = session.get('uid')
 
-    # Retrieve the userid and usertype from the session
-    userid = session.get('uid')
-    usertype = helpers_nov18.get_usertype(conn,userid)
+    # If no specific user ID is provided, use the logged-in user's ID
+    if profile_user_id is None:
+        profile_user_id = current_user_id
 
-    if usertype == 'org':
+    if profile_user_id is None:
+        flash('Please login first.')
+        return redirect(url_for('login'))
+
+    usertype = helpers_nov18.get_usertype(conn, profile_user_id)
+
+    if usertype == None:
+        flash('User not found.')
+        return redirect(url_for('index'))
+    
+    elif usertype.get('usertype') == 'org':
         # Fetch organization details and render the organization profile template
-        org = helpers_nov18.get_org_by_userid(conn, userid)
-        org_event = helpers_nov18.get_events_by_user(conn, userid)
-        return render_template('org_profile.html', org=org, org_event=org_event)
+        org = helpers_nov18.get_org_by_userid(conn, profile_user_id)
+        org_event = helpers_nov18.get_events_by_user(conn, profile_user_id)
 
-    elif usertype == 'personal':
+         # Check if the current user is following the organization
+        is_following = False
+        if current_user_id:
+            is_following = helpers_nov18.is_following(conn, current_user_id, profile_user_id)
+        return render_template('org_profile.html', org=org, org_event=org_event, is_following = is_following)
+    
+    elif usertype.get('usertype') == 'personal':
         # Fetch personal account details and render the personal user profile template
         # Assuming you have a function to get personal account details
-        user = helpers_nov18.get_user_by_userid(conn, userid)
-        events_created = helpers_nov18.get_events_by_user(conn, userid)
-        events_attending = helpers_nov18.get_eventsid_attending(conn,userid)
+        user = helpers_nov18.get_user_by_userid(conn, profile_user_id)
+        events_created = helpers_nov18.get_events_by_user(conn, profile_user_id)
+        events_attending = helpers_nov18.get_eventsid_attending(conn,profile_user_id)
         return render_template('user_profile.html', user=user, events_created = events_created, events_attending = events_attending)
 
-    else:
-        flash('Invalid user type.')
-        return redirect(url_for('index'))
+@app.route('/follow/<int:followed>/', methods=['POST'])
+def follow(followed):
+    '''
+    Button for user to follow org, only personal users can follow organizations.
+    '''
+    conn = dbi.connect()
+    userid = session.get('uid')
+    usertype = helpers_nov18.get_usertype(conn, userid)
+    # Check if the user is logged in
+    if userid is None:
+        flash('Please log in to follow organizations.')
+        return redirect(url_for('login'))
 
+    # Check the user type
+    usertype = helpers_nov18.get_usertype(conn, userid)
+    if usertype is None or usertype.get('usertype') != 'personal':
+        flash('Only personal users can follow organizations.')
+        return redirect(url_for('index'))
     
+    helpers_nov18.follow(conn,userid,followed)
+    orgname = helpers_nov18.get_org_by_userid(conn,followed)
+    orgname = orgname.get('username')
+    flash(f'''You followed {orgname}''')
+    return redirect(url_for('profile', profile_user_id = followed))
+
+@app.route('/unfollow/<int:followed>/', methods=['POST'])
+def unfollow(followed):
+    '''
+    Button for user to follow org
+    '''
+    conn = dbi.connect()
+    userid = session.get('uid')
+    helpers_nov18.unfollow(conn,userid,followed)
+    orgname = helpers_nov18.get_org_by_userid(conn,followed)
+    orgname = orgname.get('username')
+    flash(f'''You unfollowed {orgname}''')
+    return redirect(url_for('profile', profile_user_id = followed))
+
 @app.route('/filter_events/', methods=['GET', 'POST'])
 def filter_events():
     '''
@@ -291,7 +308,9 @@ def filter_events():
             'date': request.form.get('date'), 
             'type': request.form.get('type'), 
             'org_name': request.form.get('org_name'),
-            'tags': request.form.getlist('event_tags')
+            'tags': request.form.getlist('event_tags'),
+            'orgs_following': request.form.get('orgs_following'),
+            'uid': session.get('uid')
         }
         conn = dbi.connect()
 
@@ -301,9 +320,7 @@ def filter_events():
             
     else:
         #if get request, load all events
-        conn = dbi.connect()
-        events = helpers_nov18.get_homepage_events(conn)
-        return render_template('filter_events.html', events=events, filters={}) 
+        return redirect(url_for('all_events'))
 
 @app.route('/search_events/', methods=['GET', 'POST'])
 def search_events():
@@ -313,16 +330,14 @@ def search_events():
     if request.method == 'POST':
         search_term = request.form.get('search')
         conn = dbi.connect()
-
+        
         #fetch events whose eventname contain the search term via a helper function
         events = helpers_nov18.search_events(conn, search_term)
         return render_template('search_events.html', events=events, search_term=search_term)
     
     #if get request, just display all the events
     else: 
-        conn = dbi.connect()
-        events = helpers_nov18.get_homepage_events(conn)
-        return render_template('search_events.html', events=events, search_term="")
+        redirect(url_for('all_events'))
 
 
 @app.route('/update/<int:eventID>', methods=['GET','POST'])

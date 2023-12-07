@@ -85,7 +85,7 @@ def get_events_by_user(conn, userid):
     curs = dbi.dict_cursor(conn)
     curs.execute(
         """
-        select * from eventcreated where organizerid = %s;
+        select * from eventcreated, account where organizerid = %s and organizerid = userid;
         """, [userid]
     )
     return curs.fetchall()
@@ -112,7 +112,7 @@ def get_event_by_id(conn, event_id):
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''
-        select * from eventcreated where eventid = %s;
+        select * from eventcreated, account where eventid = %s and eventcreated.organizerid = account.userid;
         ''', [event_id]
     )
     return curs.fetchone()  # Returns a single event object or None if not found
@@ -144,7 +144,19 @@ def get_user_by_userid(conn,userid):
         FROM account 
         WHERE userid = %s;
         ''', [int(userid)])
-    return curs.fetchone() 
+    user_info = curs.fetchone()
+
+    # If the user exists, fetch the count of followed organizations
+    if user_info:
+        curs.execute(
+            '''
+            SELECT COUNT(*) as following_count 
+            FROM person_interest 
+            WHERE follower = %s;
+            ''', [int(userid)])
+        following_count = curs.fetchone()['following_count']
+        user_info['following_count'] = following_count
+    return user_info 
 
 def get_eventsid_attending(conn, userid):
     '''
@@ -154,7 +166,9 @@ def get_eventsid_attending(conn, userid):
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''
-        select * from eventcreated, registration where registration.participant = %s and eventcreated.eventid = registration.eventid;
+        select * from eventcreated, registration, account 
+        where registration.participant = %s and eventcreated.eventid = registration.eventid
+        and eventcreated.organizerid = account.userid;
         ''', [userid]
     )
     return curs.fetchall()
@@ -168,9 +182,40 @@ def get_usertype(conn, userid):
         '''
         select usertype from account where userid = %s
         ''', [userid])
-    usertype = curs.fetchone()
-    usertype = usertype.get('usertype')
-    return usertype
+    return curs.fetchone()
+
+def follow(conn, userid, orgid):
+    '''
+    Allow User follow org
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''insert into person_interest (follower, followed) values (%s, %s);
+        ''', [userid, orgid]
+    )
+    conn.commit()
+
+def unfollow(conn, userid, orgid):
+    """
+    Removes followed org by orgid from user's person_interest table
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        """
+        delete from person_interest
+        where follower = %s and followed = %s
+        """, [userid, orgid]
+    )
+    conn.commit()
+
+def is_following(conn, follower, followed):
+    curs = dbi.cursor(conn)
+    curs.execute('''SELECT COUNT(*) FROM person_interest
+                    WHERE follower = %s AND followed = %s''',
+                 [follower, followed])
+    count = curs.fetchone()[0]
+    return count > 0
+
 
 def get_filtered_events(conn, filters):
     '''
@@ -224,6 +269,10 @@ def get_filtered_events(conn, filters):
         
         #assemble the final string 
         query += ' and (' + ' or '.join(tag_conditions) + ')'   
+    
+    if filters.get('orgs_following'):
+        query += ' and organizerid in (select followed from person_interest where follower = %s)'
+        parameters.append(filters['uid'])
 
     #add ; at the end of the final query
     query += ';'
