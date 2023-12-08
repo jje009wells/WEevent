@@ -1,70 +1,81 @@
 {% extends "base.html" %}
 
+{% block end_scripts %}
+<script src="//code.jquery.com/jquery-1.12.4.js"></script>
+<script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<link rel='stylesheet' href="{{url_for('static', filename = 'styles.css')}}">
+<script>
+  $("#datepicker").datepicker({
+  dateFormat: "yy-mm-dd", // or any format your function expects
+  onSelect: function(dateText) {
+    $("#date").val(dateText);
+  }
+});
+</script>
+{% endblock %}
+
+
 {% block main_content %}
 <body>
-    <h1>WeEvent</h1>
-    <p>Welcome to our event management platform!</p>
-    <h1>All Events</h1>
+    <div class="filter-content-wrapper">
+        <div class="filter-bar">
+              <!-- Filter Bar -->
+              <form method="POST" action="{{ url_for('filter_events') }}" class="filter-form">
+                <!-- Date Filter -->
+                <div id="datepicker"></div>
+                <input type="hidden" id="date" name="date" value="{{ filters['date']|default('') if filters is defined else''}}" >
 
-    <!-- Search Bar -->
-    <form method="POST" action="{{ url_for('search_events') }}">
-        <input type="text" name="search" placeholder="Search events...">
-        <input type="submit" value="Search">
-    </form>
+                <div class="filter-section">
+                    <label for="org_name" class="filter-lable">By Org</label>
+                    <input type="text" id="org_name" name="org_name" placeholder="Search Org" value="{{ filters['org_name']|default('') if filters is defined else '' }}">
+                </div>
+                <div class="filter-section">
+                    <label class="filter-lable">By Account Type</label>
+                    <label><input type="radio" name="type" value="org" {% if filters is defined and filters['type'] == 'org' %}checked{% endif %}> Organization</label>
+                    <label><input type="radio" name="type" value="personal" {% if filters is defined and filters['type'] == 'personal' %}checked{% endif %}> Personal</label>
+                </div>
 
-    <!-- Filter Bar -->
-    <form method="POST" action="{{ url_for('filter_events') }}">
-        <!-- Date Filter -->
-        <label for="date">Date:</label>
-        <input type="date" id="date" name="date">
+                <div class="filter-section">
+                    <label class="filter-lable">By Event Tags</label>
+                    <label><input type="checkbox" name="event_tags" value="academic" {% if filters is defined and 'academic' in filters['tags'] %}checked{% endif %}> Academic</label>
+                    <label><input type="checkbox" name="event_tags" value="sport" {% if filters is defined and 'sport' in filters['tags'] %}checked{% endif %}> Sport</label>
+                    <label><input type="checkbox" name="event_tags" value="cultural" {% if filters is defined and 'cultural' in filters['tags'] %}checked{% endif %}> Cultural</label>
+                    <label><input type="checkbox" name="event_tags" value="religious" {% if filters is defined and 'religious' in filters['tags'] %}checked{% endif %}> Religious</label>
+                    <label><input type="checkbox" name="event_tags" value="volunteering" {% if filters is defined and 'volunteering' in filters['tags'] %}checked{% endif %}> Volunteering</label>
+                    <label><input type="checkbox" name="event_tags" value="career" {% if filters is defined and 'career' in filters['tags'] %}checked{% endif %}> Career</label>
+                    <label><input type="checkbox" name="event_tags" value="performance" {% if filters is defined and 'performance' in filters['tags'] %}checked{% endif %}> Performance</label>
+                    <label><input type="checkbox" name="event_tags" value="other" {% if filters is defined and 'other' in filters['tags'] %}checked{% endif %}> Other</label>
+                </div>
 
-        <!-- Type Filter -->
-        <label for="type">Type:</label>
-        <select id="type" name="type">
-            <option value="">Select Type</option>
-            <option value="personal">Personal</option>
-            <option value="org">Organization</option>
-        </select>
+                <div class="filter-section">
+                    <label for="orgs_following" class="filter-lable"> Orgs following </label><br>
+                    <input type="checkbox" id="orgs_following" name="orgs_following" value="orgs_following" {% if filters is defined and filters['orgs_following'] == 'on' %}checked{% endif %}>
+                </div>
 
-        <!-- Organizer Name Filter -->
-        <label for="org_name">Org Name:</label>
-        <input type="text" id="org_name" name="org_name">
-
-        <!-- Event Tags Filter -->
-        <label for="event_tags">Event Tags (Optional)</label>
-        <div id="tag-checkboxes">
-            <label><input type="checkbox" name="event_tags" value="academic"> Academic</label>
-            <label><input type="checkbox" name="event_tags" value="sport"> Sport</label>
-            <label><input type="checkbox" name="event_tags" value="cultural"> Cultural</label>
-            <label><input type="checkbox" name="event_tags" value="religious"> Religious</label>
-            <label><input type="checkbox" name="event_tags" value="volunteering"> Volunteering</label>
-            <label><input type="checkbox" name="event_tags" value="career"> Career</label>
-            <label><input type="checkbox" name="event_tags" value="performance"> Performance</label>
-            <label><input type="checkbox" name="event_tags" value="other"> Other</label>
+                <input type="submit" value="Filter" class="filter-button">
+            </form>
         </div>
-
-        <label for="orgs_following"> Orgs following </label><br>
-        <input type="checkbox" id="orgs_following" name="orgs_following" value="orgs_following">
+           
+        <div class="main-content">
+            <h1>Upcoming Events</h1>
+            <!-- Displaying Events -->
+            <ul class="event-list">
+                {% for event in events %}
+                <li>
+                    <strong>{{ event.eventname }}</strong><br>
+                    Organizer: <a href="{{ url_for('profile', profile_user_id=event.organizerid) }}">{{ event.username }}</a><br>
+                    Location: {{ event.eventloc }}<br>
+                    Description: {{ event.shortdesc }}<br>
+                    Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
+                    Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
+                    Type: {{ event.eventtype }} <br>
+                    Tags: {{ event.eventtag }} <br>
+                    <a href="/event/{{ event.eventid }}">Click for details</a>
+                </li>
+                {% endfor %}
+            </ul>
         </div>
-
-        <input type="submit" value="Filter">
-    </form>
-
-    <!-- Displaying Events -->
-    <ul class="event-list">
-        {% for event in events %}
-        <li>
-            <strong>{{ event.eventname }}</strong><br>
-            Organizer: <a href="{{ url_for('profile', profile_user_id=event.organizerid) }}">{{ event.username }}</a><br>
-            Location: {{ event.eventloc }}<br>
-            Description: {{ event.shortdesc }}<br>
-            Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
-            Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
-            Type: {{ event.eventtype }} <br>
-            Tags: {{ event.eventtag }} <br>
-            <a href="/event/{{ event.eventid }}">Click for details</a>
-        </li>
-        {% endfor %}
-    </ul>
+    </div>
 </body>
 {% endblock %}

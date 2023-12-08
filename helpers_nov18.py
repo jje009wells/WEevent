@@ -244,7 +244,7 @@ def get_filtered_events(conn, filters):
         query += ' and eventdate = %s'
         parameters.append(filters['date']) #get user input 
 
-    if filters.get('type'):
+    if filters.get('type'): 
         query += ' and eventtype = %s'
         parameters.append(filters['type'])
 

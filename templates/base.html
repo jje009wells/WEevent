@@ -7,27 +7,48 @@
     <meta name=author content="">
     <title>{% block title %}{{ page_title }}{% endblock %}</title>
     <link rel='stylesheet' href="{{url_for('static', filename = 'styles.css')}}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
     {% block head_stuff %} {% endblock %}
 </head>
 
-<body>
-<p>{% if session.username %}
-    You are logged in as {{ session.username }} <a href="{{ url_for('logout') }}">logout</a>.
-  {% else %}
-    You are not logged in. <a href="{{ url_for('login') }}">login</a>.
-  {% endif %}</p>         
+<body>  
 {% block nav %}
-<nav>
-  <ul>
-    <li><a href="{{ url_for('index') }}">Home</a></li>
-    <li><a href="{{ url_for('create_event') }}">Create an Event</a></li>
-    <li><a href="{{ url_for('register') }}">Register Account</a></li>
-    {% if session.uid %}
-            <!-- Show Profile link only if user is logged in -->
-            <li><a href="{{ url_for('profile', profile_user_id=session.uid) }}">Profile</a></li>
-    {% endif %}
-  </ul>
-</nav>
+
+<div class="nav_bar_wrapper">
+  <nav>
+    <a href="{{ url_for('index') }}" class="logo-link">
+      <img src="{{ url_for('static', filename='images/WeEvent_Logo.png') }}" alt="WeEvent Logo" class="logo">
+    </a>
+    <form method="POST" action="{{ url_for('search_events') }}" class="search-form">
+      <div class="search-box">
+        <input type="text" name="search" placeholder="Search an event..." class="search-input" value="{{ search_term|default('') }}">
+        <button type="submit" class="search-btn">
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
+    </form>
+      {% if session.uid %}
+      <div>
+        <div class="user-menu">
+          <button class="user-action">{{ session.username }}</button>
+          <div class="user-dropdown">
+            <a href="{{ url_for('profile', profile_user_id=session.uid) }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+          </div>
+        </div>
+        <a href="{{ url_for('create_event') }}" class="user-action user-action-signup">Create an Event</a>
+      </div>
+      {% else %}
+      <div>
+        <a href="{{ url_for('login') }}" class="user-action">Login</a>
+        <a href="{{ url_for('register') }}" class="user-action user-action-signup">Sign up</a>
+      </div>
+      {% endif %}
+    </div>
+  </nav>
+</div>
+
 {% endblock %}
 
 {% with messages = get_flashed_messages() %}
