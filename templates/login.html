@@ -1,26 +1,12 @@
 {% extends "base.html" %}
 
-{% block main_content %}
-<h1>Login</h1>
-
-<p>Please login:</p>
-
-
-<form id="loginform" action="{{url_for('login')}}" method="post">
-    <p><label>Username: <input type="text" name="username" required pattern="^\w+$"></label></p>
-    <p><label>Password: <input type="password" name="password" required></label></p>
-    <p><button type="submit" name="submit" value="login">Submit</button></p>
-</form>
-{% endblock %}
-    
-
 {% block jquery_scripts %}
 <script>
 $("#joinform").on('submit', function (event) {
-     var pw1 = $(this).find('[name=password1]').val();
-     var pw2 = $(this).find('[name=password2]').val();
+    var pw1 = $(this).find('[name=password1]').val();
+    var pw2 = $(this).find('[name=password2]').val();
      // should also check for length and common words etc
-     if( pw1 != pw2 ) {
+    if( pw1 != pw2 ) {
          // something more sophisticated than alert would be nice
          alert("passwords don't match");
      }
@@ -28,10 +14,29 @@ $("#joinform").on('submit', function (event) {
 </script>
 {% endblock %}
 
-
-<form id="loginform" action="{{url_for('login')}}" method="post">
-    <h2>Login</h2>
-    <p><label>Username: <input type="text" name="username" required pattern="^\w+$"></label></p>
-    <p><label>Password: <input type="password" name="password" required></label></p>
-    <p><button type="submit" name="submit" value="login">Submit</button></p>
-</form>
+{% block main_content %}
+<div class="login-page">
+    <div class = 'login-form'>
+        <h1>Login</h1>
+        <p>Welcome back!</p>
+        <form id="loginform" action="{{url_for('login')}}" method="post">
+            <div class="input-group">
+                <label>Username:</label>
+                <input type="text" name="username" placeholder="login@wellesley.edu" required pattern="^\w+$">
+            </div>
+            <div class="input-group">
+                <label>Password:</label>
+                <input type="password" name="password" placeholder="Enter your password" required>
+            </div>
+            <div class="action-group">
+                <button type="submit" name="submit" value="login" class="login-btn">Login</button>
+                <div class="divider">or</div>
+                <a href="{{ url_for('register') }}" class="signup-btn">Sign up</a>
+            </div>
+        </form>
+    </div>
+    <div class = 'login-image'>
+        <img src="{{ url_for('static', filename='images/undraw_my_password_re_ydq7.svg') }}" alt="Login illustration">
+    </div>
+</div>
+{% endblock %}

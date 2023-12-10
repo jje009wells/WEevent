@@ -2,11 +2,11 @@ body {
   font-family: 'Roboto', sans-serif;
   max-width: 90vw;
   margin: auto;
+  background-color: #fff
 }
 
 button {
     padding: 10px 20px;
-    margin: 10px;
     cursor: pointer;
     background-color: #0055B0;
     border: none;
@@ -18,7 +18,7 @@ button {
     border-radius: 12px;
   }
   
-  .event-list li {
+.event-list li {
     list-style-type: none;
     background-color: #fff;
     border: 1px solid #e0e0e0;
@@ -31,12 +31,6 @@ button {
 }
 
 
-
-  img {
-    width:400px;
-    height:auto;
-  }
-
   textarea {
     width: 400px;
     height: 150px;
@@ -46,7 +40,8 @@ button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
   }
 
   nav {
@@ -54,6 +49,7 @@ button {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin: 10px;
   }
   
   .logo {
@@ -185,6 +181,7 @@ button {
 /* Hover states for the days */
 .ui-datepicker td:hover .ui-state-default {
   background-color: #e6e6e6;
+  color: #333;
   border: none;
   border-radius: 30px;
   text-align: center;
@@ -205,6 +202,22 @@ button {
   border: none;
 }
 
+.ui-datepicker-today .ui-state-active {
+  border: 1px solid #e6e6e6;
+  background-color: #e6e6e6;
+  color: #333;
+}
+
+.ui-datepicker-today .ui-state-highlight {
+  border: 1px solid #e6e6e6;
+  background-color: #e6e6e6;
+  color: #333;
+}
+
+.ui-datepicker-today .ui-state-default {
+  color: #333;
+}
+
 
 /* Container for the filter bar and the content */
 .filter-content-wrapper {
@@ -217,10 +230,9 @@ button {
   position: sticky;
   top: 0; /* Adjust as needed based on your header's height */
   left: 0;
-  height: 80vh;
   overflow-y: auto; /* Allows scrolling within the filter bar */
   width: 250px; /* Width of the filter bar */
-  background-color: #F7F7F7; /* Background color of the filter bar */
+  background-color: #fff; /* Background color of the filter bar */
   padding: 20px;
   border-radius: 12px;
 }
@@ -243,6 +255,8 @@ button {
 }
 
 .filter-section label {
+  margin-bottom: 5px;
+  margin-top: 5px;
   font-size: 18px;
   margin-bottom: 5px;
   display: block;
@@ -273,6 +287,374 @@ button {
 
 /* Style for the main content */
 .main-content {
+  background-color: #f6f6f6;
   flex-grow: 1; /* Takes up the remaining space */
   padding: 20px; /* Spacing around the content */
+  border-radius: 24px;
 }
+
+.main-wrapper {
+  background-color: #fff;
+  width: 100%; 
+  display: flex; 
+  justify-content: space-between; /* This centers the flex items on the main-axis (horizontally) */
+  align-items: center; 
+  margin: 0 auto; 
+}
+
+.event-detail-page {
+  display: flex;
+  flex-direction: row;
+  width: auto; /* or your preferred max width */
+  margin: auto;
+}
+
+.login-page {
+  display: flex;
+  flex-direction: row;
+  width: 90%; /* or your preferred max width */
+  margin: auto;
+  padding-top: 40px;
+  justify-content: space-between;
+}
+
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* This will create a responsive grid */
+  grid-gap: 20px; /* Space between cards */
+}
+
+.event-card {
+  background: #FFF;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+}
+
+.event-image img {
+  width: 100%; /* Adjusts the width of the image to be 90% of its container's width */
+  height: 200px; /* Sets a fixed height for all images */
+  object-fit: cover; /* Ensures the image covers the area without distorting aspect ratio */
+  display: block; /* Allows margin auto to work for horizontal centering */
+  border-radius: 12px; /* Rounds the corners of the image */
+}
+
+.event-image-details {
+  position: sticky;
+  top: 0;
+  flex: 1;
+  height: 86.7vh;
+  overflow-y: auto; 
+}
+
+.event-image-details img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.login-image {
+  display: flex;
+  justify-content: center;
+  align-items: center; 
+}
+
+.login-image img{
+  max-width: 100%; 
+  max-height: 100%; 
+  object-fit: contain; 
+}
+
+
+.event-info {
+  flex: 1; 
+  padding-top: 15px;
+}
+
+.event-detail-container {
+  flex: 1;
+  margin-left: 50px; /* Spacing between image and details */
+  overflow-y: auto; /* Allow vertical scrolling if needed */
+}
+
+.login-form {
+  flex: 1;
+  margin-right: 40px;
+  max-width: 600px; /* or a specific pixel value if you prefer */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+
+.event-title {
+  font-size: 20px;
+}
+
+.event-detail {
+  font-size: 16px;
+  color: #666;
+}
+
+.event-detail-1 {
+  font-size: 18px;
+  color: #333;
+}
+
+.event-detail.evnet-date:before {
+  content: url('/static/images/material-symbols_calendar-month-outline.svg');
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.event-detail.event-loc:before {
+  content: url('/static/images/material-symbols_location-on-outline-rounded.svg');
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.event-detail.event-host:before {
+  content: url('/static/images/iconoir_sparks.svg');
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.event-detail.event-email:before {
+  content: url('/static/images/ic_outline-email.svg');
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.event-type.performance {
+  font-weight: medium;
+  font-size: small;
+  color: #2B2987;
+  background-color:#CCCBFE;
+  border-radius: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin: 0 2px;
+}
+
+.event-type.academic {
+  font-weight: medium;
+  font-size: small;
+  color: #5E431B;
+  background-color:#F7DCB4;
+  border-radius: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin: 0 2px;
+}
+
+.event-type.sport {
+  font-weight: medium;
+  font-size: small;
+  color: #5F1A16;
+  background-color:#F7B8B4;
+  border-radius: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin: 0 2px;
+}
+
+.event-type.cultural {
+  font-weight: medium;
+  font-size: small;
+  color: #574E03;
+  background-color:#F0E79A;
+  border-radius: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin: 0 2px;
+}
+
+.event-type.religious {
+  font-weight: medium;
+  font-size: small;
+  color: #355C15;
+  background-color:#C6E7AC;
+  border-radius: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin: 0 2px;
+}
+
+.event-type.religious {
+  font-weight: medium;
+  font-size: small;
+  color: #355C15;
+  background-color:#C6E7AC;
+  border-radius: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin: 0 2px;
+}
+
+.event-type.volunteering {
+  font-weight: medium;
+  font-size: small;
+  color: #10592C;
+  background-color:#ACE7C3;
+  border-radius: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin: 0 2px;
+}
+
+.event-type.career {
+  font-weight: medium;
+  font-size: small;
+  color: #1A4A63;
+  background-color:#BCD7E5;
+  border-radius: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin: 0 2px;
+}
+
+.event-type.other {
+  font-weight: medium;
+  font-size: small;
+  color: #4D1276;
+  background-color:#DFC4F0;
+  border-radius: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin: 0 2px;
+}
+
+.event-type.personal {
+  font-weight: medium;
+  font-size: small;
+  color: #175147;
+  background-color:#93DFD2;
+  border-radius: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin: 0 2px;
+}
+
+.event-type.org {
+  font-weight: medium;
+  font-size: small;
+  color: #013E7F;
+  background-color:#C3E0F8;
+  border-radius: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin: 0 2px;
+}
+
+.event-actions {
+  display: flex;
+  margin: 0;
+  gap: 15px;
+  padding: 0;
+}
+
+.event-actions button {
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0%;
+  text-align: center;
+  margin: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.rsvp-button {
+  background-color: #0055B0;
+  color: white;
+}
+
+.rsvp-button[disabled] {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+.details-button {
+  background-color: transparent;
+  color: #0055B0;
+  border: 1px solid #0055B0;
+
+}
+
+
+.input-group label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.input-group input {
+  width: 94%;
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+}
+
+.action-group {
+  text-align: center;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  background-color: #0055B0;
+  color: white;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+.signup-btn {
+  display: inline-block; 
+  width: 92%; 
+  padding: 15px 20px; 
+  border: 1px solid #0055B0; 
+  border-radius: 12px;
+  background-color: #fff; 
+  color: #0055B0;
+  font-size: 16px; 
+  text-align: center; 
+  text-decoration: none; 
+  cursor: pointer; 
+}
+
+
+.divider {
+  margin: 10px 0;
+}
+

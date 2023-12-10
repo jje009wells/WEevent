@@ -3,9 +3,9 @@
 from flask import (Flask, render_template, make_response, url_for, request,
                    redirect, flash, session, send_from_directory, jsonify)
 from werkzeug.utils import secure_filename
-from datetime import datetime
 import time
 app = Flask(__name__)
+from datetime import datetime
 
 import cs304dbi as dbi
 
@@ -34,8 +34,8 @@ def index():
     Renders the homepage 
     '''
     conn = dbi.connect()
-    events = helpers_nov18.get_homepage_events(conn)
-    
+    user_id = session.get('uid')
+    events = helpers_nov18.get_homepage_events(conn, user_id=user_id)
     return render_template('all_events.html', events = events)
 
 @app.route('/uploads/<filename>/')
@@ -169,19 +169,10 @@ def event(event_id):
     conn = dbi.connect()
     event = helpers_nov18.get_event_by_id(conn, event_id) 
 
-    if session.get('uid') is None:
-        flash("You are not logged in, please log in to create an event!")
-        return redirect(url_for('login'))
-    else:
-        uid = session['uid']
-        account_info = helpers_nov18.get_account_info(conn, userID=uid)
-    
-    usertype = account_info['usertype']
-
     if event:
         #in case the user directly types in the image in the url, need to check that the filename is secure
         filename = event['spam']
-
+        event = helpers_nov18.formate_date(event)
         if filename: 
             valid_filename = helpers_nov18.is_valid_filename(filename)
             if not valid_filename:
@@ -191,7 +182,7 @@ def event(event_id):
         else:
             filename = None
 
-        return render_template('event_detail.html', event=event, filename=filename, usertype=usertype)
+        return render_template('event_detail.html', event=event, filename=filename)
     else:
         flash('Event not found.')
         return redirect(url_for('index'))
@@ -322,14 +313,14 @@ def search_events():
     if request.method == 'POST':
         search_term = request.form.get('search')
         conn = dbi.connect()
-        
+        userid = session.get('uid')
         #fetch events whose eventname contain the search term via a helper function
-        events = helpers_nov18.search_events(conn, search_term)
+        events = helpers_nov18.search_events(conn, search_term,userid=userid)
         return render_template('all_events.html', events=events, search_term = search_term)
     
     #if get request, just display all the events
     else: 
-        redirect(url_for('index'))
+        return redirect(url_for('index'))
 
 
 @app.route('/update/<int:eventID>', methods=['GET','POST'])
@@ -413,13 +404,18 @@ def register():
     conn = dbi.connect()
 
     if request.method == 'POST':
-        #if the user clicked on the register personal
-        if request.form.get('submit') == 'register_personal': 
-            # get the info from the personal account form
-            userInfo = request.form.to_dict()
-            userInfo['user_type'] = 'personal'
-            print(userInfo)
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password1 = request.form.get('password1')
+        password2 = request.form.get('password2')
+        if password1 != password2:
+            flash('Passwords do not match!')
+            return redirect(url_for('register'))
+        
+        # Check if the user chose to register as a personal account
+        if request.form.get('account_type') == 'personal':
 
+            
             # username = request.form.get('username')
             # passwd1 = request.form.get('password1')
             # passwd2 = request.form.get('password2')
@@ -443,9 +439,8 @@ def register():
             
         #if the user clicked on the register org button
         elif request.form.get('submit') == 'register_org': 
-            flash(f"clicked register org")
-            userInfo = request.form.to_dict()
-            userInfo['user_type'] = 'org'
+            eboard = request.form.get('eboard')
+            org_info = request.form.get('org_info')
             print(userInfo)
 
             # username = request.form.get('username')
@@ -493,6 +488,7 @@ def register():
         flash('You were registered! FYI, you were issued UID {}'.format(uid))
         session['username'] = username
         session['uid'] = uid
+        session['usertype'] = userInfo['user_type']
         return redirect( url_for('profile' ))
 
     #if get request, display the update page for the event
@@ -526,9 +522,12 @@ def login():
             flash('successfully logged in as '+username)
             session['username'] = username
             session['uid'] = uid
+            usertype = helpers_nov18.get_usertype(conn,uid)
+            usertype = usertype.get('usertype')
+            session['usertype'] = usertype
             #session['email'] = accountInfo.get('email')
             #session['visits'] = 1 #don't think we need to keep track of this?
-            return redirect( url_for('profile') )
+            return redirect( url_for('index') )
 
             
         #if the user clicked on the delete button
@@ -537,7 +536,6 @@ def login():
 
     #if get request, display the update page for the event
     elif request.method == 'GET':
-        flash(f"this was a GET")
         return render_template('login.html', page_title='Login')
 
 
@@ -546,6 +544,7 @@ def login():
 def logout():
     session['username'] = None
     session['uid'] = None
+    session['usertype'] = None
     #session['email'] = None
     return redirect(url_for('index'))
 
@@ -553,26 +552,23 @@ def logout():
 def rsvp(event_id):
     conn = dbi.connect()
 
-    user_id = session['uid']
-    print("User ID in session (RSVP route):", user_id)
+    user_id = session.get('uid')
  
     rsvp_required = helpers_nov18.rsvp_required(conn, event_id)['rsvp']
 
     #registration_status would be None if the user has not rsvped already
     registration_status = helpers_nov18.user_rsvp_status(conn, event_id, user_id) 
 
-    if rsvp_required: 
+    if rsvp_required:
         if registration_status is None: 
             helpers_nov18.insert_registration(conn, event_id, user_id)
-            flash('RSVP successful')
+            return jsonify({'status': 'success', 'message': 'RSVP successful'})
         else: 
-            flash('You have already rsvped to the event')
+            return jsonify({'status': 'error', 'message': 'You have already RSVPed to the event'})
 
     #technically should not get here as the user would not see the button, but just to be safe...
     else:
-        flash('RSVP is not required for this event.')
-    
-    return redirect(url_for('event', event_id=event_id))
+        return jsonify({'status': 'info', 'message': 'RSVP is not required for this event'})
 
 @app.route('/view_rsvp_list/')
 def view_rsvp_list():

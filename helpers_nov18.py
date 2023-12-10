@@ -1,9 +1,21 @@
 # @authors: Jen Enriquez, Victoria Lu, Jiayi Wu, Yannis Zhu
 
 from flask import flash
+from datetime import date, datetime, timedelta
 
 import cs304dbi as dbi
 import os, bcrypt
+
+def timedelta_to_time(td):
+    return (datetime.min + td).time()
+
+def formate_date(event):
+    event['formatted_date'] = event['eventdate'].strftime('%b %-d, %Y')
+    start_time = timedelta_to_time(event['starttime'])
+    end_time = timedelta_to_time(event['endtime'])
+    event['formatted_starttime'] = start_time.strftime('%-I%p').lower().replace(':00', '')
+    event['formatted_endtime'] = end_time.strftime('%-I:%M%p').lower().replace(':00', '')
+    return event
 
 def insert_event_data(conn, organizer_id, username, user_email, event_name, 
                         event_type, short_description, event_date, start_time, end_time, 
@@ -90,19 +102,36 @@ def get_events_by_user(conn, userid):
     )
     return curs.fetchall()
 
-def get_homepage_events(conn):
+def get_homepage_events(conn, user_id=None):
     '''
     Gets all events in the database. 
     Used for viewing all events, filtering, and searching.
     '''
     curs = dbi.dict_cursor(conn)
-    curs.execute(
-        '''
-        select * from eventcreated join account on (eventcreated.organizerid = account.userid);
-        '''
-    )
-    return curs.fetchall()
-
+    if user_id is None:
+        # If no user ID is provided, return events without RSVP information
+        curs.execute('''
+            select * from eventcreated, account
+            where eventcreated.organizerid = account.userid
+            order by eventcreated.eventdate, eventcreated.starttime;
+        ''')
+    else:
+        # Include RSVP information in the query
+        curs.execute('''
+            select eventcreated.*, account.*, 
+                   if(registration.participant is not null, 'yes', 'no') as user_rsvped
+            from eventcreated
+            left join registration 
+            on eventcreated.eventid = registration.eventid 
+            and registration.participant = %s
+            join account 
+            on eventcreated.organizerid = account.userid
+            order by eventcreated.eventdate, eventcreated.starttime;
+        ''', [user_id])
+    events = curs.fetchall()
+    for event in events:
+        event = formate_date(event)
+    return events
 
 def get_event_by_id(conn, event_id):
     '''
@@ -232,7 +261,7 @@ def get_filtered_events(conn, filters):
     #always start with select select * from eventcreated where...
     query = '''
         select *
-        from eventcreated where 1=1
+        from eventcreated, account where 1=1 and eventcreated.organizerid = account.userid
         '''
 
     #initilize list of parameters to replace %s
@@ -285,14 +314,31 @@ def get_filtered_events(conn, filters):
 
     return curs.fetchall()
 
-def search_events(conn, search_term):
+def search_events(conn, search_term,userid = None):
     '''
     Gets all events whose event names match a search term
     '''
     curs = dbi.dict_cursor(conn)
-    query = ''' select * from eventcreated where eventname like %s '''
-    curs.execute(query, ['%' + search_term + '%'])
-    return curs.fetchall()
+    if userid is None:
+        query = ''' select * from eventcreated, account where eventname like %s and eventcreated.organizerid = account.userid;'''
+        curs.execute(query, ['%' + search_term + '%'])
+    else:
+        curs.execute(''' 
+            select eventcreated.*, account.*, 
+                   if(registration.participant is not null, 'yes', 'no') as user_rsvped 
+            from eventcreated
+            left join registration 
+            on eventcreated.eventid = registration.eventid 
+            and registration.participant = %s
+            join account 
+            on eventcreated.organizerid = account.userid
+            where eventname like %s
+            order by eventcreated.eventdate, eventcreated.starttime;
+        ''', [userid, '%' + search_term + '%'])
+    events = curs.fetchall()
+    for event in events:
+        event = formate_date(event)
+    return events
 
 def update_event(conn, formData, eventID):
     """

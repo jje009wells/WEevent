@@ -1,37 +1,82 @@
 {% extends "base.html" %}
 
-<!--Displays all details of an event-->
+{% block end_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+  var rsvpButton = document.getElementById('rsvpButton');
+  if (rsvpButton) {
+    rsvpButton.addEventListener('click', function(e) {
+      e.preventDefault(); // Prevent the form from submitting via the browser.
+
+      var form = this.closest('form'); // Get the form surrounding the button.
+      var actionUrl = form.action; // Get the action URL from the form.
+
+      // Send the form data to the server
+      fetch(actionUrl, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: {
+          'Accept': 'application/json',
+          // Include any additional headers like CSRF tokens if necessary
+        },
+      })
+      .then(response => {
+        if(response.ok) {
+          // If the server responds with a success status, refresh the page
+          window.location.reload();
+        } else {
+          // If the server responds with an error status, alert the user
+          alert('An error occurred. Please try again.');
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+      });
+    });
+  }
+});
+</script>
+{% endblock %}
+
 {% block main_content %}
-
-  <div class="event-details-container">
-    <h1>{{ event.eventname }}</h1>
-    <p><strong>Organizer:</strong> <a href="{{ url_for('profile', profile_user_id=event.organizerid) }}">{{ event.username }}</a></p>
-    <p><strong>Date:</strong> {{ event.eventdate }}</p>
-    <p><strong>Time:</strong> From {{ event.starttime }} to {{ event.endtime }}</p>
-    <p><strong>Type:</strong> {{ event.eventtype }} </p>
-    <p><strong>Organizer ID (for testing purposes only):</strong> {{ event.organizerid }} </p>
-    <p><strong>Location:</strong> {{ event.eventloc }}</p>
-    <p><strong>Description:</strong> {{ event.fulldesc }}</p>
-    <p><strong>Contact Email:</strong> <a href="mailto:{{ event.contactemail }}">{{ event.contactemail }}</a></p>
-    <p><strong>RSVP:</strong> {{ 'Required' if event.rsvp == 'yes' else 'Not Required' }}</p>
-    
-    {% if event.rsvp == 'yes' %}
-      {% if usertype == 'org' %}
-        <p>To RSVP, please use a personal account.</p>
-      {% else %}
-        <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">
-          <button type="submit">RSVP</button>
-        </form>
+<body>
+  <div class="event-detail-page">
+      <div class="event-detail-container">
+        <header>
+          <button class="back-button" onclick="history.back();">&larr; Back</button>
+        </header>
+        <p class="event-detail-1">
+          <span class="event-type {{ event.eventtype }}">{{ event.eventtype }}</span>
+          <span class="event-type {{ event.eventtag }}">{{ event.eventtag }}</span>
+        </p>  
+        <h1>{{ event.eventname }}</h1>
+        <p class="event-detail evnet-date">{{ event.formatted_date }} from {{ event.formatted_starttime }} to {{ event.formatted_endtime }}</p>
+        <p class="event-detail event-loc">{{ event.eventloc }}</p>
+        <p class="event-detail event-host">By {{ event.username }}</p>
+        <p class="event-detail event-email">Contact us at {{ event.email }}</p>
+        <div>
+          <h2>Description</h2>
+          <p>{{event.fulldesc}}</p>
+        </div>
+        {% if session.uid and session.usertype == 'personal' %}
+            {% if event.rsvp == 'yes' %}
+                <button class="rsvp-button" disabled>RSVP'd</button>
+            {% else %}
+                <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">
+                <button id = "rsvpButton" type="submit" class="rsvp-button">RSVP</button>
+                </form>
+            {% endif %}
         {% endif %}
-    {% endif %}
-
-    <p><strong>Tags:</strong> {{ event.eventtag }}</p>
-    
-    {% if filename %}
-      <img src="{{ url_for('uploads', filename=filename) }}" alt="Event Image">
-    {% endif %}
-
-    <button onclick="history.back();">Back to Last Page</button>
-
+      </div>
+      <div class="event-image-details">
+        {% if event.spam %}
+            {% set filename = event.spam.split('/')[-1] %}
+                <img src="{{ url_for('uploads', filename=filename) }}" alt="Event image for {{ event.eventname }}">
+        {% else %}
+          <img src="{{ url_for('static', filename='images/WeEvent_default_event_pic.png') }}" alt="WeEvent default image">
+        {% endif %}
+      </div>
   </div>
+</body>
 {% endblock %}

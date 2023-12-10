@@ -6,12 +6,51 @@
 <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <link rel='stylesheet' href="{{url_for('static', filename = 'styles.css')}}">
 <script>
-  $("#datepicker").datepicker({
-  dateFormat: "yy-mm-dd", // or any format your function expects
-  onSelect: function(dateText) {
-    $("#date").val(dateText);
+  $(function() {
+    $("#datepicker").datepicker({
+      dateFormat: "yy-mm-dd",
+      defaultDate: null, // Explicitly set no default date
+      onSelect: function(dateText) {
+        $("#date").val(dateText);
+      }
+    });
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+  var rsvpButton = document.getElementById('rsvpButton');
+  if (rsvpButton) {
+    rsvpButton.addEventListener('click', function(e) {
+      e.preventDefault(); // Prevent the form from submitting via the browser.
+
+      var form = this.closest('form'); // Get the form surrounding the button.
+      var actionUrl = form.action; // Get the action URL from the form.
+
+      // Send the form data to the server
+      fetch(actionUrl, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: {
+          'Accept': 'application/json',
+          // Include any additional headers like CSRF tokens if necessary
+        },
+      })
+      .then(response => {
+        if(response.ok) {
+          // If the server responds with a success status, refresh the page
+          window.location.reload();
+        } else {
+          // If the server responds with an error status, alert the user
+          alert('An error occurred. Please try again.');
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+      });
+    });
   }
 });
+
 </script>
 {% endblock %}
 
@@ -20,6 +59,7 @@
 <body>
     <div class="filter-content-wrapper">
         <div class="filter-bar">
+            <h2>Filter</h2>
               <!-- Filter Bar -->
               <form method="POST" action="{{ url_for('filter_events') }}" class="filter-form">
                 <!-- Date Filter -->
@@ -59,23 +99,45 @@
            
         <div class="main-content">
             <h1>Upcoming Events</h1>
-            <!-- Displaying Events -->
-            <ul class="event-list">
-                {% for event in events %}
-                <li>
-                    <strong>{{ event.eventname }}</strong><br>
-                    Organizer: <a href="{{ url_for('profile', profile_user_id=event.organizerid) }}">{{ event.username }}</a><br>
-                    Location: {{ event.eventloc }}<br>
-                    Description: {{ event.shortdesc }}<br>
-                    Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
-                    Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
-                    Type: {{ event.eventtype }} <br>
-                    Tags: {{ event.eventtag }} <br>
-                    <a href="/event/{{ event.eventid }}">Click for details</a>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
+            <div class="event-grid">
+              {% for event in events %}
+              <div class="event-card">
+                <div class="event-image">
+                    {% if event.spam %}
+                        {% set filename = event.spam.split('/')[-1] %}
+                            <img src="{{ url_for('uploads', filename=filename) }}" alt="Event image for {{ event.eventname }}">
+                    {% else %}
+                      <img src="{{ url_for('static', filename='images/WeEvent_default_event_pic.png') }}" alt="WeEvent default image">
+                    {% endif %}
+                </div>
+                <div class="event-info">
+                  <p class="event-detail">
+                    <span class="event-type {{ event.eventtype }}">{{ event.eventtype }}</span>
+                    <span class="event-type {{ event.eventtag }}">{{ event.eventtag }}</span>
+                  </p>  
+                  <h2 class="event-title">{{ event.eventname }}</h2>
+                  <p class="event-detail evnet-date">{{ event.formatted_date }} from {{ event.formatted_starttime }} to {{ event.formatted_endtime }}</p>
+                  <p class="event-detail event-loc">{{ event.eventloc }}</p>
+                  <p class="event-detail event-host">By {{ event.username }}</p>
+                  <div class="event-actions">
+                    {% if session.uid and session.usertype == 'personal' %}
+                      {% if event.user_rsvped == 'yes'%}
+                        <button class="rsvp-button" disabled>RSVP'd</button>
+                      {% else %}
+                        <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">
+                        <button id="rsvpButton" type="submit" class="rsvp-button">RSVP</button>
+                        </form>
+                      {%endif%}
+                    {% endif %}
+                    <form action="{{ url_for('event', event_id=event.eventid) }}" method="get">
+                    <button type="submit" class="details-button">View Details</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+        </div>          
     </div>
 </body>
 {% endblock %}
