@@ -28,7 +28,7 @@ app.config['MAX_CONTENT_LENGTH'] = 1*1024*1024 # 1 MB
 app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 
 # so the that the session will expire eventually?
-app.config["SESSION_PERMANENT"] = False
+#app.config["SESSION_PERMANENT"] = False
 
 @app.route('/')
 def index():
@@ -38,7 +38,7 @@ def index():
     conn = dbi.connect()
     user_id = session.get('uid')
     events = helpers_nov18.get_homepage_events(conn, user_id=user_id)
-    return render_template('all_events.html', events = events)
+    return render_template('all_events.html', page_title='Home', events = events)
 
 @app.route('/uploads/<filename>/')
 def uploads(filename):
@@ -63,10 +63,10 @@ def create_event():
 
             if account_info['usertype'] == 'org':
                 # If the user is an organization, hardcode 'type' field to 'org' in the form
-                return render_template("create_event.html", method="POST", eventtype='org')
+                return render_template("create_event.html", page_title='Create Event', method="POST", eventtype='org')
             else:
                 # If the user is an individual, hardcode 'type' field to 'personal' in the form
-                return render_template("create_event.html", method="POST", eventtype='personal')
+                return render_template("create_event.html", page_title='Create Event', method="POST", eventtype='personal')
     else:
         if session.get('uid') is None:
             flash("You are not logged in, please log in to create an event!")
@@ -122,7 +122,7 @@ def create_event():
                     flash('Upload successful')
                 except Exception as err:
                     flash('Upload failed {why}'.format(why=err))
-                    return render_template('create_event.html')
+                    return render_template('create_event.html', page_title='Create Event')
             else: 
                 pathname = None
 
@@ -156,7 +156,7 @@ def event(event_id):
 
         rsvp_info = helpers_nov18.get_rsvp_info(conn, event_id) 
         qa= helpers_nov18.get_qa(conn, event_id)
-        return render_template('event_detail.html', event=event, filename=filename, rsvp_info = rsvp_info, uid = str(session.get('uid')), qa = qa)
+        return render_template('event_detail.html', page_title='Event Details', event=event, filename=filename, rsvp_info = rsvp_info, uid = str(session.get('uid')), qa = qa)
 
     else:
         flash('Event not found.')
@@ -194,7 +194,7 @@ def profile(profile_user_id=None):
         is_following = False
         if current_user_id:
             is_following = helpers_nov18.is_following(conn, current_user_id, profile_user_id)
-        return render_template('org_profile.html', org=org, org_event=org_event, is_following = is_following)
+        return render_template('org_profile.html',page_title='Org Profile', org=org, org_event=org_event, is_following = is_following)
     
     elif usertype.get('usertype') == 'personal':
         # Fetch personal account details and render the personal user profile template
@@ -202,7 +202,7 @@ def profile(profile_user_id=None):
         user = helpers_nov18.get_user_by_userid(conn, profile_user_id)
         events_created = helpers_nov18.get_events_by_user(conn, profile_user_id, current_user_id)
         events_attending = helpers_nov18.get_eventsid_attending(conn,profile_user_id)
-        return render_template('user_profile.html', user=user, events_created = events_created, events_attending = events_attending)
+        return render_template('user_profile.html', page_title='User Profile', user=user, events_created = events_created, events_attending = events_attending)
 
 @app.route('/follow/<int:followed>/', methods=['POST'])
 def follow(followed):
@@ -261,10 +261,10 @@ def view_following(profile_userid):
         if request.method == 'POST':
             search_term = request.form.get('org_name')
             search_results = helpers_nov18.search_orgs_by_keyword(conn, search_term)
-            return render_template('followed_orgs.html', search_results=search_results, followed_orgs=followed_orgs, user= user)
+            return render_template('followed_orgs.html', page_title='Followed Orgs', search_results=search_results, followed_orgs=followed_orgs, user= user)
         #if no search was made, just list the orgs followed
         else: 
-            return render_template('followed_orgs.html', followed_orgs=followed_orgs, user= user)
+            return render_template('followed_orgs.html', page_title='Followed Orgs', followed_orgs=followed_orgs, user= user)
 
     #if user is not logged in, flash a message and redirect to login
     else: 
@@ -292,7 +292,7 @@ def filter_events():
 
         #fetch the events that match the filters via a helper function
         events = helpers_nov18.get_filtered_events(conn, filters,userid)
-        return render_template('all_events.html', events=events, filters=filters)
+        return render_template('all_events.html', page_title='All Events', events=events, filters=filters)
             
     else:
         #if get request, load all events/homepage
@@ -309,7 +309,7 @@ def search_events():
         userid = session.get('uid')
         #fetch events whose eventname contain the search term via a helper function
         events = helpers_nov18.search_events(conn, search_term,userid=userid)
-        return render_template('all_events.html', events=events, search_term = search_term)
+        return render_template('all_events.html', page_title='All Events', events=events, search_term = search_term)
     
     #if get request, just display all the events
     else: 
@@ -398,7 +398,7 @@ def update(eventID):
                         flash('Upload successful')
                     except Exception as err:
                         flash('Upload failed {why}'.format(why=err))
-                        return render_template('create_event.html')
+                        return render_template('create_event.html', page_title='Create Event')
                 else: 
                     pathname = None
                 
@@ -633,8 +633,8 @@ if __name__ == '__main__':
     else:
         port = os.getuid()
     # set this local variable to 'wmdb' or your personal or team db
-    #db_to_use = 'weevent_db' #team db
-    db_to_use = os.getlogin() + '_db' #personal db
+    db_to_use = 'weevent_db' #team db
+    #db_to_use = os.getlogin() + '_db' #personal db
     print('will connect to {}'.format(db_to_use))
     dbi.conf(db_to_use)
     app.debug = True

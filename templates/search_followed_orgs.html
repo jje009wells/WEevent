@@ -3,7 +3,8 @@
 {% block main_content %}
 <h1>Search for Orgs to Follow</h1>
 <form action="{{ url_for('view_following') }}" method="post">
-    <input type="text" name="org_name">
+    <label for="org_name">Search Org Name</label>
+    <input id="org_name" type="text" name="org_name">
     <input type="submit" value="Search and Follow">
 </form>
 

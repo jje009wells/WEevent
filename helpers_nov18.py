@@ -583,7 +583,7 @@ def insert_answer(conn, qa_id, organization_id, answer_content):
 
 
 if __name__ == '__main__':
-    #database = 'weevent_db' #team db
-    database = os.getlogin() + '_db'
+    database = 'weevent_db' #team db
+    #database = os.getlogin() + '_db'
     dbi.conf(database)
     conn = dbi.connect()
