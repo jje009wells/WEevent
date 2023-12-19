@@ -8,8 +8,9 @@
         <form id="registerform" action="{{ url_for('register') }}" method="post">
             <div class="input-group">
                 <label for="account_type">Account Type:</label>
+                <p>Please be sure to choose what type of account you are registering.</p>
                 <div class="toggle-switch">
-                    <input type="radio" name="account_type" id="org" value="org" class="account-type-radio">
+                    <input type="radio" name="account_type" id="org" value="org" class="account-type-radio" required>
                     <label for="org" class="toggle-switch-label">Organization</label>
                     <input type="radio" name="account_type" id="personal" value="personal" class="account-type-radio">
                     <label for="personal" class="toggle-switch-label">Personal</label>

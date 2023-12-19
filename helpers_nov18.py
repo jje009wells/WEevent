@@ -137,8 +137,8 @@ def get_upcoming_events(conn, user_id=None):
         curs.execute('''
             select *
             from eventcreated, account
-            where eventcreated.organizerid = account.userid and eventcreated.eventdate >= %s
-            order by eventcreated.eventdate, eventcreated.starttime
+            where eventcreated.organizerid = account.userid and eventdate >= %s
+            order by eventdate, eventcreated.starttime
         ''',[now])
     else:
         curs.execute('''
@@ -147,7 +147,7 @@ def get_upcoming_events(conn, user_id=None):
             FROM eventcreated ec
             JOIN account acc ON ec.organizerid = acc.userid
             LEFT JOIN registration reg ON ec.eventid = reg.eventid AND reg.participant = %s
-            WHERE eventcreated.eventdate >= %s
+            WHERE eventdate >= %s
             GROUP BY ec.eventid
             ORDER BY ec.eventdate, ec.starttime;
         ''', [user_id, now])
