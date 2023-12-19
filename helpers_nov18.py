@@ -358,7 +358,7 @@ def search_events(conn, search_term,userid = None):
         event = formate_date(event)
     return events
 
-def update_event(conn, formData, eventID):
+def update_event(conn, formData, eventID,userid):
     """
     Updates event with info gathered info from form.
     Returns the full updated event dictionary
@@ -376,7 +376,7 @@ def update_event(conn, formData, eventID):
             formData.get('end_time'), formData.get('event_location'),formData.get('rsvp_required'),formData.get('event_tags'),formData.get('full_desc'), eventID]
     )
     conn.commit()
-    eventDict = get_event_by_id(conn,eventID)
+    eventDict = get_event_by_id(conn,eventID,userid)
     return eventDict
 
 def get_followed_orgs(conn, userid): 
