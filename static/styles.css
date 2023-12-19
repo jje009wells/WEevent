@@ -77,6 +77,10 @@ button {
     overflow: hidden; /* Ensures the child elements do not break the rounded corners */
     width: 500px;
   }
+
+  label[for="search"] {
+    visibility:hidden;
+ }
   
   .search-input {
     padding: 15px;
@@ -967,6 +971,10 @@ a:hover {
   position: relative;
 }
 
+label[for="org_name"] {
+  visibility:hidden;
+}
+
 .table-rsvp {
   width: 100%;
   border-collapse: separate;
@@ -1088,6 +1096,14 @@ td {
 .question-content {
   color: #000000;
   margin: 5px 0; 
+}
+
+label[for="question_content"] {
+  visibility:hidden;
+}
+
+label[for="reply_content"] {
+  visibility:hidden;
 }
 
 .reply-btn {
