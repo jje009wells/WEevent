@@ -129,31 +129,13 @@ def get_homepage_events(conn, user_id=None):
         event = formate_date(event)
     return events
 
-def get_upcoming_events(conn, user_id=None):
-    now = datetime.now()
-    curs = dbi.dict_cursor(conn)
-    if user_id is None:
-        # If no user ID is provided, return events without RSVP information
-        curs.execute('''
-            select *
-            from eventcreated, account
-            where eventcreated.organizerid = account.userid and eventdate >= %s
-            order by eventdate, eventcreated.starttime
-        ''',[now])
-    else:
-        curs.execute('''
-            SELECT ec.*, acc.*, 
-                IF(reg.participant IS NOT NULL AND reg.eventid = ec.eventid, 'yes', 'no') AS user_rsvped
-            FROM eventcreated ec
-            JOIN account acc ON ec.organizerid = acc.userid
-            LEFT JOIN registration reg ON ec.eventid = reg.eventid AND reg.participant = %s
-            WHERE eventdate >= %s
-            GROUP BY ec.eventid
-            ORDER BY ec.eventdate, ec.starttime;
-        ''', [user_id, now])
-    upcoming_events = curs.fetchall()
-    for event in upcoming_events:
-        event = formate_date(event)
+def get_upcoming_events(events):
+    '''
+    Filters upcoming events from a list of events.
+    An event is considered upcoming if its date is equal to or greater than the current date.
+    '''
+    now = datetime.now().date()
+    upcoming_events = [event for event in events if event['eventdate'] >= now]
     return upcoming_events
 
 

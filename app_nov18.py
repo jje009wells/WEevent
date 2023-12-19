@@ -38,7 +38,7 @@ def index():
     conn = dbi.connect()
     user_id = session.get('uid')
     events = helpers_nov18.get_homepage_events(conn, user_id=user_id)
-    upcoming_events = helpers_nov18.get_upcoming_events(conn,user_id=user_id)
+    upcoming_events = helpers_nov18.get_upcoming_events(events)
     return render_template('all_events.html', page_title='All Events', events = events, upcoming_events=upcoming_events)
 
 @app.route('/uploads/<filename>/')
@@ -293,7 +293,8 @@ def filter_events():
 
         #fetch the events that match the filters via a helper function
         events = helpers_nov18.get_filtered_events(conn, filters,userid)
-        return render_template('all_events.html', page_title='All Events', events=events, filters=filters)
+        upcoming_events = helpers_nov18.get_upcoming_events(events)
+        return render_template('all_events.html', page_title='All Events', events=events, filters=filters,upcoming_events= upcoming_events)
             
     else:
         #if get request, load all events/homepage
@@ -310,7 +311,8 @@ def search_events():
         userid = session.get('uid')
         #fetch events whose eventname contain the search term via a helper function
         events = helpers_nov18.search_events(conn, search_term,userid=userid)
-        return render_template('all_events.html', page_title='All Events', events=events, search_term = search_term)
+        upcoming_events = helpers_nov18.get_upcoming_events(events)
+        return render_template('all_events.html', page_title='All Events', events=events, search_term = search_term,upcoming_events=upcoming_events)
     
     #if get request, just display all the events
     else: 
