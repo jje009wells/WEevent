@@ -1135,3 +1135,37 @@ label[for="reply_content"] {
 .reply-divider {
   border-top:#f1f0f0 1px solid;
 }
+
+.tabs {
+  margin-bottom: 20px;
+}
+
+.tab {
+  background-color: transparent;
+  color:#000000;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding-right: 15px;
+  border-radius: 0%;
+  transition: 0.3s;
+  border-bottom: transparent 3px solid;
+}
+
+.tab.active {
+  border-bottom: #0055B0 3px solid;
+}
+
+.tab:hover {
+  border-bottom: #0055B0 3px solid;
+}
+
+.tab-content {
+  display: none;
+  animation: fadeEffect 1s; /* Fading effect takes 1 second */
+}
+
+@keyframes fadeEffect {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}

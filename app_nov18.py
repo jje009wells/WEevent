@@ -38,7 +38,8 @@ def index():
     conn = dbi.connect()
     user_id = session.get('uid')
     events = helpers_nov18.get_homepage_events(conn, user_id=user_id)
-    return render_template('all_events.html', page_title='Home', events = events)
+    upcoming_events = helpers_nov18.get_upcoming_events(conn,user_id=user_id)
+    return render_template('all_events.html', page_title='All Events', events = events, upcoming_events=upcoming_events)
 
 @app.route('/uploads/<filename>/')
 def uploads(filename):
@@ -155,8 +156,8 @@ def event(event_id):
             filename = None
 
         rsvp_info = helpers_nov18.get_rsvp_info(conn, event_id) 
-        qa= helpers_nov18.get_qa(conn, event_id)
-        return render_template('event_detail.html', page_title='Event Details', event=event, filename=filename, rsvp_info = rsvp_info, uid = str(session.get('uid')), qa = qa)
+        qa = helpers_nov18.get_qa(conn, event_id)
+        return render_template('event_detail.html', page_title='Event Details',event=event, filename=filename, rsvp_info = rsvp_info, uid = str(session.get('uid')), qa = qa)
 
     else:
         flash('Event not found.')

@@ -15,6 +15,24 @@
       }
     });
   });
+
+  function showTab(tabName) {
+  // Hide all tabs
+  $('.tab-content').hide();
+
+  // Remove active class from all tabs
+  $('.tab').removeClass('active');
+
+  // Show the selected tab content and add the active class to the clicked tab
+  $('#' + tabName).show();
+  $('.tab[onclick="showTab(\'' + tabName + '\')"]').addClass('active');
+}
+
+// Call this function to display the first tab on page load
+$(document).ready(function() {
+  showTab('upcoming'); // Show 'upcoming' tab on page load
+});
+
 </script>
 {% endblock %}
 
@@ -62,7 +80,56 @@
         </div>
            
         <div class="main-content">
-            <h1>Upcoming Events</h1>
+          <div class="tabs">
+            <button class="tab" onclick="showTab('upcoming')"><h1>Upcoming Events</h1></button>
+            <button class="tab" onclick="showTab('all')"><h1>All Events</h1></button>
+          </div>          
+          <div id="upcoming" class = "tab-content">
+            <div class="event-grid">
+              {% for event in upcoming_events %}
+              <div class="event-card">
+                <div class="event-image">
+                    {% if event.spam %}
+                        {% set filename = event.spam.split('/')[-1] %}
+                            <img src="{{ url_for('uploads', filename=filename) }}" alt="Event image for {{ event.eventname }}">
+                    {% else %}
+                      <img src="{{ url_for('static', filename='images/WeEvent_default_event_pic.png') }}" alt="WeEvent default image">
+                    {% endif %}
+                </div>
+                <div class="event-info">
+                  <p class="event-detail">
+                    <span class="event-type {{ event.eventtype|lower }}">{{ event.eventtype }}</span>
+                    {% set tag_list = event.eventtag.split(',') %}
+                    {% for tag in tag_list %}
+                      <span class="event-type {{ tag|trim|lower }}">{{ tag|trim }}</span>
+                    {% endfor %}
+                  </p >  
+                  <h2 class="event-title">{{ event.eventname }}</h2>
+                  <p class="event-detail evnet-date">{{ event.formatted_date }} from {{ event.formatted_starttime }} to {{ event.formatted_endtime }}</p>
+                  <p class="event-detail event-loc">{{ event.eventloc }}</p>
+                  <p class="event-detail event-host">By <a href="{{ url_for('profile', profile_user_id=event.userid) }}">{{ event.username }}</a></p>
+                  <p class="event-detail event-att">{{ event.numattendee}} people attending</p>
+                  <div class="event-actions">
+                    {% if session.uid and session.usertype == 'personal' and session.uid != event.userid %}
+                      <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">
+                        {% if event.user_rsvped == 'yes'%}
+                          <button id="rsvpButton" type="submit" class="rsvp-button">Cancel RSVP</button>
+                        {% else %}
+                          <button id="rsvpButton" type="submit" class="rsvp-button">RSVP</button>
+                        {%endif%}
+                      </form>
+                    {% endif %}
+                    <form action="{{ url_for('event', event_id=event.eventid) }}" method="get">
+                    <button type="submit" class="details-button">View Details</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          
+          <div id="all" class = "tab-content" style="display: none;">
             <div class="event-grid">
               {% for event in events %}
               <div class="event-card">
@@ -105,6 +172,7 @@
               </div>
               {% endfor %}
             </div>
+          </div>
         </div>          
     </div>
 </body>
