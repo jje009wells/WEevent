@@ -83,15 +83,16 @@ def get_events_by_user(conn, profile_userid, current_user_id):
     curs = dbi.dict_cursor(conn)
     curs.execute(
         """
-        SELECT ec.*, acc.*, 
-            IF(reg.participant IS NOT NULL AND reg.eventid = ec.eventid, 'yes', 'no') AS user_rsvped
-        FROM eventcreated ec
-        JOIN account acc ON ec.organizerid = acc.userid
-        LEFT JOIN registration reg ON ec.eventid = reg.eventid 
-                      AND reg.participant = %s
-        WHERE reg.participant IS NOT NULL AND ec.organizerid = %s
-            GROUP BY ec.eventid
-        ORDER BY ec.eventdate, ec.starttime;
+        select ec.*, acc.*, 
+                   IF(reg.participant IS NOT NULL AND reg.eventid = ec.eventid, 'yes', 'no') AS user_rsvped
+        from eventcreated ec
+        left join registration reg
+        on reg.participant = %s
+        join account acc
+        on ec.organizerid = acc.userid
+        where ec.organizerid = %s
+        group by ec.eventid
+        order by ec.eventdate, ec.starttime;
         """, [current_user_id, profile_userid]
     )
     events = curs.fetchall()
