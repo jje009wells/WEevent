@@ -23,9 +23,11 @@
     </a>
     <form method="POST" action="{{ url_for('search_events') }}" class="search-form">
       <div class="search-box">
-        <input type="text" name="search" placeholder="Search an event..." class="search-input" value="{{ search_term|default('') }}">
+        <input id="search" type="text" name="search" placeholder="Search an event..." class="search-input" value="{{ search_term|default('') }}">
+        <label for="search">Search</label>
         <button type="submit" class="search-btn">
           <i class="fas fa-search"></i>
+          Search
         </button>
       </div>
     </form>

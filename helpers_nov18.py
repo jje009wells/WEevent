@@ -129,6 +129,34 @@ def get_homepage_events(conn, user_id=None):
         event = formate_date(event)
     return events
 
+def get_upcoming_events(conn, user_id=None):
+    now = datetime.now()
+    curs = dbi.dict_cursor(conn)
+    if user_id is None:
+        # If no user ID is provided, return events without RSVP information
+        curs.execute('''
+            select *
+            from eventcreated, account
+            where eventcreated.organizerid = account.userid and eventdate >= %s
+            order by eventdate, eventcreated.starttime
+        ''',[now])
+    else:
+        curs.execute('''
+            SELECT ec.*, acc.*, 
+                IF(reg.participant IS NOT NULL AND reg.eventid = ec.eventid, 'yes', 'no') AS user_rsvped
+            FROM eventcreated ec
+            JOIN account acc ON ec.organizerid = acc.userid
+            LEFT JOIN registration reg ON ec.eventid = reg.eventid AND reg.participant = %s
+            WHERE eventdate >= %s
+            GROUP BY ec.eventid
+            ORDER BY ec.eventdate, ec.starttime;
+        ''', [user_id, now])
+    upcoming_events = curs.fetchall()
+    for event in upcoming_events:
+        event = formate_date(event)
+    return upcoming_events
+
+
 def get_event_by_id(conn, event_id, userid):
     curs = dbi.dict_cursor(conn)
     curs.execute(
@@ -583,7 +611,7 @@ def insert_answer(conn, qa_id, organization_id, answer_content):
 
 
 if __name__ == '__main__':
-    #database = 'weevent_db' #team db
-    database = os.getlogin() + '_db'
+    database = 'weevent_db' #team db
+    #database = os.getlogin() + '_db'
     dbi.conf(database)
     conn = dbi.connect()

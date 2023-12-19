@@ -5,10 +5,13 @@
   <h1>Following</h1>
   <div class="org-search-container">
     <form action="{{ url_for('view_following', profile_userid = user.userid) }}" method="post" class="search-form">
+      
       <div class="search-box">
-        <input type="text" name="org_name" placeholder="Search org..." class="search-input" value="{{ search_term|default('') }}">
+        <input id="org_name" type="text" name="org_name" placeholder="Search org..." class="search-input" value="{{ search_term|default('') }}">
+        <label for="org_name">Search Org Name</label>
         <button type="submit" class="search-btn">
         <i class="fas fa-search"></i>
+         Search
         </button>
       </div>
     </form>
