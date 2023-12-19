@@ -49,7 +49,7 @@ $(document).ready(function() {
                 <input type="hidden" id="date" name="date" value="{{ filters['date']|default('') if filters is defined else''}}" >
 
                 <div class="filter-section">
-                  <label for="org_name" class="filter-lable">By Org</label>
+                  <label for="org_filter_name" class="filter-lable">By Org</label>
                   <input type="text" id="org_name" name="org_name" placeholder="Search Org" value="{{ filters['org_name']|default('') if filters is defined else '' }}">
                 </div>
                 
