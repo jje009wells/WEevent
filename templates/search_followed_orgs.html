@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<h1>Search for Orgs to Follow</h1>
+<form action="{{ url_for('view_following') }}" method="post">
+    <input type="text" name="org_name">
+    <input type="submit" value="Search and Follow">
+</form>
+
+{% if search_results %}
+    <p>Search Results</p>
+    <ul>
+        {% for org in search_results %}
+          <li><a href="{{ url_for('profile', profile_user_id=org.userid) }}"><strong>{{ org.username }}</strong></a></li>
+        {% endfor %}
+    </ul>
+{% endif %}
+{% endblock %}

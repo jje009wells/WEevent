@@ -2,45 +2,53 @@ import cs304dbi as dbi
 import pymysql
 import bcrypt
 
-#need to fix this to work with our code, will prob pass a dict of all the user info
 def insert_user(conn, userInfo, verbose=False):
-    '''inserts given username & password into the userpass table.  
-Returns three values: the uid, whether there was a duplicate key error, 
-and either false or an exception object.
+    '''inserts given user info into the account and respective tables.
+    Returns three values: the uid, whether there was a duplicate key error,
+    and either false or an exception object.
     '''
     hashed = bcrypt.hashpw(userInfo.get('password1').encode('utf-8'),
                            bcrypt.gensalt())
     curs = dbi.cursor(conn)
-    try: 
+    try:
+        # Insert into the account table
         curs.execute('''INSERT INTO account (usertype, username, email, hashedp) 
                         VALUES(%s, %s, %s, %s)''',
-                     [userInfo.get('user_type'), userInfo.get('username'), userInfo.get('email'), hashed.decode('utf-8')])
+                     [userInfo.get('user_type'), userInfo.get('username'),
+                      userInfo.get('email'), hashed.decode('utf-8')])
         
+        # Get the last insert id
         curs.execute('select last_insert_id()')
         row = curs.fetchone()
-        print(row[0])
+        uid = row[0]
+        print(f'New user id: {uid}')
+
+        # Insert into the respective table based on user type
         if userInfo.get('user_type') == 'personal':
             curs.execute('''INSERT INTO personal_account (userid) 
-                        VALUES(%s)''', [row[0]])
-            print('inserted into personal')
+                            VALUES(%s)''', [uid])
+            print('inserted into personal account table')
         elif userInfo.get('user_type') == 'org':
             curs.execute('''INSERT INTO org_account (userid, eboard, orginfo) 
-                        VALUES(%s, %s, %s)''', [row[0], userInfo.get('eboard'),userInfo.get('org_info')])
-            print('inserted into org')
+                            VALUES(%s, %s, %s)''', [uid, userInfo.get('eboard'), userInfo.get('org_info')])
+            print('inserted into organization account table')
+
+        # Commit the transaction
         conn.commit()
-        return (row[0], False, False)
+        return (uid, False, False)
     except pymysql.err.IntegrityError as err:
         details = err.args
         if verbose:
-            print('error inserting user',details)
+            print('Error inserting user:', details)
         if details[0] == pymysql.constants.ER.DUP_ENTRY:
             if verbose:
-                print('duplicate key for username {}'.format(userInfo.get('username')))
+                print('Duplicate key for username', userInfo.get('username'))
             return (False, True, False)
         else:
             if verbose:
-                print('some other error!')
+                print('Some other database error occurred!')
             return (False, False, err)
+
 
 def login_user(conn, username, password):
     '''tries to log the user in given username & password. 

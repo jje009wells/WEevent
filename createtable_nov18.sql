@@ -1,6 +1,6 @@
 use jw103_db; 
 
-drop table if exists comment;
+drop table if exists QA;
 drop table if exists registration;
 drop table if exists eventcreated; 
 drop table if exists person_interest;
@@ -68,6 +68,7 @@ CREATE TABLE eventcreated (
   fulldesc varchar(4000), 
   contactemail varchar(2000),
   spam varchar(100),
+  numattendee int,
   index(eventid), 
   foreign key (organizerid) references account(userid) 
     on delete cascade
@@ -88,21 +89,24 @@ CREATE TABLE registration (
 )
 ENGINE = InnoDB;
 
-CREATE TABLE comment (
-  commentid int PRIMARY KEY,
+CREATE TABLE QA (
+  QAID int PRIMARY KEY AUTO_INCREMENT,
   eventid int,
-  senderid int,
-  recieverID int,
-  commentcontent varchar(1000),
-  dateCreated timestamp,
+  userid int,
+  orgid int,
+  question varchar(1000),
+  answer varchar(1000),
+  questionDate timestamp,
+  answerDate timestamp,
   foreign key (eventid) references eventcreated(eventid) 
     on delete cascade
     on update cascade,
-  foreign key (senderid) references account(userid) 
+  foreign key (userid) references account(userid) 
     on delete cascade
     on update cascade,
-  foreign key (recieverid) references account(userid) 
+  foreign key (orgid) references account(userid) 
     on delete cascade
     on update cascade
 )
 ENGINE = InnoDB;
+

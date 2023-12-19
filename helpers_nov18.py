@@ -50,8 +50,8 @@ def insert_event_data(conn, organizer_id, username, user_email, event_name,
     #insert event information into the events table 
     curs.execute( 
         '''
-        insert into eventcreated(organizerid, eventname, eventtype, shortdesc, eventdate, starttime, endtime, eventloc, rsvp, eventtag, fulldesc, contactemail, spam)
-        values (%s, %s, %s,%s, %s, %s,%s, %s, %s,%s, %s, %s, %s);
+        insert into eventcreated(organizerid, eventname, eventtype, shortdesc, eventdate, starttime, endtime, eventloc, rsvp, eventtag, fulldesc, contactemail, spam, numattendee)
+        values (%s, %s, %s,%s, %s, %s,%s, %s, %s,%s, %s, %s, %s, 0);
         ''', [organizer_id, event_name, event_type, short_description,
             event_date, start_time, end_time, event_location,
             rsvp, event_tags, full_description, contact_email, pathname]
@@ -61,7 +61,6 @@ def insert_event_data(conn, organizer_id, username, user_email, event_name,
     curs.execute("select last_insert_id()")
     event_id = curs.fetchone()['last_insert_id()']
     return event_id
-
 
 def insert_event_image(conn, event_id, pathname):
     '''
@@ -76,20 +75,7 @@ def insert_event_image(conn, event_id, pathname):
     conn.commit()
     return "Updated event image"
 
-# def get_all_events(conn):
-#     """
-#     Gets a list of all event names in currently in the eventcreated table.
-#     """
-#     curs = dbi.dict_cursor(conn)
-#     curs.execute(
-#         """
-#         select eventname, eventid
-#         from eventcreated;
-#         """
-#     )
-#     return curs.fetchall()
-
-def get_events_by_user(conn, userid):
+def get_events_by_user(conn, profile_userid, current_user_id):
     """
     Gets all events created by a specific user. 
     Used for displaying events that a user manages. 
@@ -97,10 +83,21 @@ def get_events_by_user(conn, userid):
     curs = dbi.dict_cursor(conn)
     curs.execute(
         """
-        select * from eventcreated, account where organizerid = %s and organizerid = userid;
-        """, [userid]
+        SELECT ec.*, acc.*, 
+            IF(reg.participant IS NOT NULL AND reg.eventid = ec.eventid, 'yes', 'no') AS user_rsvped
+        FROM eventcreated ec
+        JOIN account acc ON ec.organizerid = acc.userid
+        LEFT JOIN registration reg ON ec.eventid = reg.eventid 
+                      AND reg.participant = %s
+        WHERE reg.participant IS NOT NULL AND ec.organizerid = %s
+            GROUP BY ec.eventid
+        ORDER BY ec.eventdate, ec.starttime;
+        """, [current_user_id, profile_userid]
     )
-    return curs.fetchall()
+    events = curs.fetchall()
+    for event in events:
+        event = formate_date(event)
+    return events
 
 def get_homepage_events(conn, user_id=None):
     '''
@@ -111,40 +108,42 @@ def get_homepage_events(conn, user_id=None):
     if user_id is None:
         # If no user ID is provided, return events without RSVP information
         curs.execute('''
-            select * from eventcreated, account
+            select *
+            from eventcreated, account
             where eventcreated.organizerid = account.userid
-            order by eventcreated.eventdate, eventcreated.starttime;
+            order by eventcreated.eventdate, eventcreated.starttime
         ''')
     else:
-        # Include RSVP information in the query
         curs.execute('''
-            select eventcreated.*, account.*, 
-                   if(registration.participant is not null, 'yes', 'no') as user_rsvped
-            from eventcreated
-            left join registration 
-            on eventcreated.eventid = registration.eventid 
-            and registration.participant = %s
-            join account 
-            on eventcreated.organizerid = account.userid
-            order by eventcreated.eventdate, eventcreated.starttime;
+            SELECT ec.*, acc.*, 
+                IF(reg.participant IS NOT NULL AND reg.eventid = ec.eventid, 'yes', 'no') AS user_rsvped
+            FROM eventcreated ec
+            JOIN account acc ON ec.organizerid = acc.userid
+            LEFT JOIN registration reg ON ec.eventid = reg.eventid AND reg.participant = %s
+            GROUP BY ec.eventid
+            ORDER BY ec.eventdate, ec.starttime;
         ''', [user_id])
     events = curs.fetchall()
     for event in events:
         event = formate_date(event)
     return events
 
-def get_event_by_id(conn, event_id):
-    '''
-    Gets a sepcific event by its event_id.
-    Used for uploading spam when creating an event. 
-    '''
+def get_event_by_id(conn, event_id, userid):
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''
-        select * from eventcreated, account where eventid = %s and eventcreated.organizerid = account.userid;
-        ''', [event_id]
+        SELECT ec.*, acc.*, GROUP_CONCAT(reg.participant) as attendees, 
+            IF(%s IN (SELECT participant FROM registration WHERE eventid = ec.eventid), 'yes', 'no') AS user_rsvped
+        FROM eventcreated ec
+        JOIN account acc ON ec.organizerid = acc.userid
+        LEFT JOIN registration reg ON ec.eventid = reg.eventid
+        WHERE ec.eventid = %s
+        GROUP BY ec.eventid
+        ''', [userid, int(event_id)]
     )
-    return curs.fetchone()  # Returns a single event object or None if not found
+    event = curs.fetchone()
+    event = formate_date(event)
+    return event  # Returns a single event object or None if not found
 
 def get_org_by_userid(conn, userid):
     '''
@@ -195,12 +194,21 @@ def get_eventsid_attending(conn, userid):
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''
-        select * from eventcreated, registration, account 
-        where registration.participant = %s and eventcreated.eventid = registration.eventid
-        and eventcreated.organizerid = account.userid;
+        SELECT ec.*, acc.*, 
+            IF(reg.participant IS NOT NULL AND reg.eventid = ec.eventid, 'yes', 'no') AS user_rsvped
+        FROM eventcreated ec
+        JOIN account acc ON ec.organizerid = acc.userid
+        LEFT JOIN registration reg ON ec.eventid = reg.eventid 
+                      AND reg.participant = %s
+        WHERE reg.participant IS NOT NULL
+            GROUP BY ec.eventid
+        ORDER BY ec.eventdate, ec.starttime;
         ''', [userid]
     )
-    return curs.fetchall()
+    events = curs.fetchall()
+    for event in events:
+        event = formate_date(event)
+    return events
 
 def get_usertype(conn, userid):
     '''
@@ -246,7 +254,7 @@ def is_following(conn, follower, followed):
     return count > 0
 
 
-def get_filtered_events(conn, filters):
+def get_filtered_events(conn, filters,userid):
     '''
     Gets events matching certain filters
     '''
@@ -257,15 +265,24 @@ def get_filtered_events(conn, filters):
     #    from eventcreated where 
     #    eventdate = ... and eventtype = ... and (eventtag like ... or event tag like ...)
     #want to build this up from individual strings
+    
+    #initilize list of parameters to replace %s
+    if userid is None:
+        query = '''
+        select eventcreated.*, account.*
+        from eventcreated, account, registration
+        where 1=1 and eventcreated.organizerid = account.userid and eventcreated.eventid = registration.eventid
+        '''
+        parameters = []
+    else: 
+        query = '''
+        select eventcreated.*, account.*, IF(%s IN (SELECT participant FROM registration WHERE eventid = eventcreated.eventid), 'yes', 'no') AS user_rsvped
+        from eventcreated, account, registration
+        where 1=1 and eventcreated.organizerid = account.userid and eventcreated.eventid = registration.eventid
+        '''
+        parameters = [userid]
 
     #always start with select select * from eventcreated where...
-    query = '''
-        select *
-        from eventcreated, account where 1=1 and eventcreated.organizerid = account.userid
-        '''
-
-    #initilize list of parameters to replace %s
-    parameters = []
 
     #first checks if the user used a date/type/tag/org_name filter at all
     #if not, do not want it in the query
@@ -303,16 +320,16 @@ def get_filtered_events(conn, filters):
         query += ' and organizerid in (select followed from person_interest where follower = %s)'
         parameters.append(filters['uid'])
 
-    #add ; at the end of the final query
-    query += ';'
-     
-    #print("Query:", query)
-    #print("Parameters:", parameters)
+    query += 'group by eventcreated.eventid order by eventcreated.eventdate, eventcreated.starttime;'
 
-    #get all the events matching the filters 
     curs.execute(query, parameters)
+    events = curs.fetchall()
 
-    return curs.fetchall()
+    # Formatting the date for each event
+    for event in events:
+        event = formate_date(event)
+
+    return events
 
 def search_events(conn, search_term,userid = None):
     '''
@@ -320,21 +337,21 @@ def search_events(conn, search_term,userid = None):
     '''
     curs = dbi.dict_cursor(conn)
     if userid is None:
-        query = ''' select * from eventcreated, account where eventname like %s and eventcreated.organizerid = account.userid;'''
+        query = ''' select eventcreated.*, account.*, GROUP_CONCAT(participant) as attendees
+                    from eventcreated, account, registration 
+                    where eventname like %s and eventcreated.organizerid = account.userid and eventcreated.eventid = registration.eventid;'''
         curs.execute(query, ['%' + search_term + '%'])
     else:
         curs.execute(''' 
-            select eventcreated.*, account.*, 
-                   if(registration.participant is not null, 'yes', 'no') as user_rsvped 
-            from eventcreated
-            left join registration 
-            on eventcreated.eventid = registration.eventid 
-            and registration.participant = %s
-            join account 
-            on eventcreated.organizerid = account.userid
-            where eventname like %s
-            order by eventcreated.eventdate, eventcreated.starttime;
-        ''', [userid, '%' + search_term + '%'])
+            SELECT ec.*, acc.*, 
+                IF(%s IN (SELECT participant FROM registration WHERE eventid = ec.eventid), 'yes', 'no') AS user_rsvped
+            FROM eventcreated ec
+            JOIN account acc ON ec.organizerid = acc.userid
+            LEFT JOIN registration reg ON ec.eventid = reg.eventid AND reg.participant = %s
+            WHERE ec.eventname like %s
+            GROUP BY ec.eventid
+            ORDER BY ec.eventdate, ec.starttime;
+        ''', [userid, userid, '%' + search_term + '%'])
     events = curs.fetchall()
     for event in events:
         event = formate_date(event)
@@ -351,45 +368,26 @@ def update_event(conn, formData, eventID):
     curs.execute(
         """
         update eventcreated
-        set eventname = %s, eventtype = %s, shortdesc = %s,eventdate = %s,starttime = %s,
-            endtime = %s,eventloc = %s,rsvp = %s,eventtag = %s,fulldesc = %s,spam = %s
+        set eventname = %s, shortdesc = %s,eventdate = %s,starttime = %s,
+            endtime = %s,eventloc = %s,rsvp = %s,eventtag = %s,fulldesc = %s
         where eventid = %s;
-        """, [formData.get('event_name'), formData.get('event_type'), formData.get('short_desc'),formData.get('event_date'), formData.get('start_time'),
-            formData.get('end_time'), formData.get('event_location'),formData.get('rsvp_required'),formData.get('event_tags'),formData.get('full_desc'), formData.get('event_image'), eventID]
+        """, [formData.get('event_name'), formData.get('short_desc'),formData.get('event_date'), formData.get('start_time'),
+            formData.get('end_time'), formData.get('event_location'),formData.get('rsvp_required'),formData.get('event_tags'),formData.get('full_desc'), eventID]
     )
     conn.commit()
     eventDict = get_event_by_id(conn,eventID)
     return eventDict
 
-
-#this is the same as get_event_by_id, modified app_nov18.py
-# def event_details(conn, eventID):
-#     """
-#     Gets all relevant 
-#     """
-#     curs = dbi.dict_cursor(conn)
-#     curs.execute( # find the given movie
-#         '''
-#         select eventid, organizerid, eventname, eventtype, shortdesc,eventdate,starttime,endtime,eventloc,rsvp,eventtag,fulldesc,contactemail,spam
-#         from eventcreated
-#         where eventid = %s;
-#         ''', [eventID]
-#     )
-    
-#     eventDict = curs.fetchone()  
-#     return eventDict
-
-# def get_event_by_id(conn, event_id):
-#     '''
-#     This function retrieves the details of a specific event by its event_id.
-#     '''
-#     curs = dbi.dict_cursor(conn)
-#     curs.execute(
-#         '''
-#         select * from eventcreated where eventid = %s;
-#         ''', [event_id]
-#     )
-#     return curs.fetchone()
+def get_followed_orgs(conn, userid): 
+    '''Gets a list of orgs that a personal account is following
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''select org_account.userid, account.username
+            from org_account inner join person_interest on person_interest.followed = org_account.userid
+            inner join account on org_account.userid = account.userid
+            where person_interest.follower = %s;''', [userid])
+    return curs.fetchall()
 
 #just gets info from account table, doesnt get personal or org specific data
 def get_account_info(conn, userID):
@@ -436,7 +434,17 @@ def user_rsvp_status(conn, event_id, user_id):
     )
     return curs.fetchone() 
 
-def insert_registration(conn, event_id, user_id):
+def count_numattendee(conn, event_id):
+    '''count number of attendees after user rsvp'd'''
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''select count(participant) from registration where eventid = %s''', [event_id]
+    )
+    count = curs.fetchone()
+    count = int(count.get('count(participant)'))
+    return count
+
+def rsvp(conn, event_id, user_id):
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''insert into registration (eventid, participant) values (%s, %s);
@@ -444,6 +452,22 @@ def insert_registration(conn, event_id, user_id):
     )
     conn.commit()
     return 'Registration inserted'
+
+def cancel_rsvp(conn, event_id, user_id):
+    '''Deletes a rsvp record from the resgitration table
+    '''
+    curs = dbi.dict_cursor(conn)
+    curs.execute('delete from registration where eventid= %s and participant = %s;', [event_id, user_id])
+    conn.commit()
+    return "RSVP cancelled"
+
+def update_numattendee(conn,eventid,count):
+    curs = dbi.dict_cursor(conn)
+    curs.execute(
+        '''update eventcreated set numattendee = %s where eventid = %s;''',[count,eventid]
+    )
+    conn.commit()
+    return 'updated number of attendees'
 
 def is_valid_filename(filename):
     #filename pattern needs to match something like uploads/10_1700612634.png (id_timestamp.extension)
@@ -472,6 +496,90 @@ def get_rsvp_info(conn, event_id):
         ''', [event_id]
     )
     return curs.fetchall()
+
+######### helpers related to changing account information ######### 
+def update_account(conn, formData, userID):
+    """
+    Updates account with info gathered info from form.
+    Returns the full updated account dictionary
+    """
+    curs = dbi.dict_cursor(conn)
+    
+
+    if (get_account_info(conn,userID).get('usertype') == 'personal'):
+        #update an account with new data
+        curs.execute(
+            """
+            update account
+            set username = %s, email = %s
+            where userid = %s;
+            """, [formData.get('username'), formData.get('email'), userID]
+        )
+        conn.commit()
+    else: # the usertype must be org
+        curs.execute(
+            """
+            update account
+            set username = %s, email = %s
+            where userid = %s;
+            """, [formData.get('username'), formData.get('email'), userID]
+        )
+        curs.execute(
+            """
+            update org_account
+            set eboard = %s, orginfo = %s
+            where userid = %s;
+            """, [formData.get('eboard'), formData.get('org_info'), userID]
+        )
+        conn.commit()
+
+    accountDict = get_account_info(conn,userID)
+    return accountDict
+
+def update_password(conn, passwd, userID):
+    """
+    Updates account with info gathered info from form.
+    Returns the full updated account dictionary
+    """
+    curs = dbi.dict_cursor(conn)
+    hashed = bcrypt.hashpw(passwd.encode('utf-8'),
+                           bcrypt.gensalt())
+    
+    #update an account with new data
+    curs.execute(
+        """
+        update account
+        set hashedp = %s
+        where userid = %s;
+        """, [hashed, userID]
+    )
+    conn.commit()
+
+######### helpers related to Q&A feature #########
+def insert_question(conn, event_id, user_id, question_content):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''
+        INSERT INTO QA (eventid, userid, question, questionDate)
+        VALUES (%s, %s, %s, NOW());
+    ''', [event_id, user_id, question_content])
+    conn.commit()
+
+def get_qa(conn,event_id):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''
+        SELECT * from QA, account where eventid = %s and QA.userid = account.userid;
+    ''', [event_id])
+    return curs.fetchall()
+
+def insert_answer(conn, qa_id, organization_id, answer_content):
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''
+        UPDATE QA
+        SET orgid = %s, answer = %s, answerDate = NOW()
+        WHERE QAID = %s;
+    ''', [organization_id, answer_content, qa_id])
+    conn.commit()
+
 
 if __name__ == '__main__':
     #database = 'weevent_db' #team db

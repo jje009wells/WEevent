@@ -2,46 +2,114 @@
 
 {% block main_content %}
   <div class="org-details-container">
-    <h1>{{ user.username }}</h1>
-    <p><strong>Email:</strong> <a href="mailto:{{ user.email }}">{{ user.email }}</a></p>
-    <p><strong>Org ID (for testing purposes only):</strong> {{ user.userid }} </p>
-    <p><strong>Following:</strong> {{ user.following_count }} </p>
+    <div class="profile-container">
+      <div class="profile-image">
+          <img src="{{ url_for('static', filename='images/Default_profile_image.png') }}" alt="Profile image">
+      </div>
+      <div class="profile-info">
+        <div class = "username-btn">
+          <h1 class="username">{{ user.username }}</h1>
+          {% if session.uid == user.userid %}
+            <form action="{{ url_for('account_management') }}">
+            <button type="submit" class="details-button">Edit Account</button>
+            </form>
+          {% endif %}
+        </div>
+          <p class="user-details">
+              <a href="mailto:{{ user.email }}">{{ user.email }}</a> · <a href="{{ url_for('view_following', profile_userid = user.userid) }}">{{ user.following_count }} Following</a>
+          </p>
+      </div>
+    </div>
+  
 
 
-    <ul class="event-list">
-      <h2>Hosting:</h2>
-      {% for event in events_created %}
-      <li>
-        <strong>{{ event.eventname }}</strong><br>
-        Organizer: <a href="{{ url_for('profile', profile_user_id=event.organizerid) }}">{{ event.username }}</a><br>
-        Location: {{ event.eventloc }}<br>
-        Description: {{ event.shortdesc }}<br>
-        Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
-        Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
-        Type: {{ event.eventtype }} <br>
-        Tags: {{ event.eventtag }} <br>
-        <a href="/event/{{ event.eventid }}">Click for details</a>
-        <a href="{{ url_for('view_rsvp_details', event_id = event.eventid)}}">Attendees</a>
-      </li>
-      {% endfor %}
-    </ul>
-
-    <ul class="event-list">
-        <h2>Attending:</h2>
-        {% for event in events_attending %}
-        <li>
-          <strong>{{ event.eventname }}</strong><br>
-          Organizer: <a href="{{ url_for('profile', profile_user_id=event.organizerid) }}">{{ event.username }}</a><br>
-          Location: {{ event.eventloc }}<br>
-          Description: {{ event.shortdesc }}<br>
-          Time: {{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}<br>
-          Organizer ID (for testing purposes only): {{ event.organizerid }} <br>
-          Type: {{ event.eventtype }} <br>
-          Tags: {{ event.eventtag }} <br>
-          <a href="/event/{{ event.eventid }}">Click for details</a>
-        </li>
+    <div class="profile-event-wrapper">
+      <h1>Hosting:</h1>
+      <div class="event-grid">
+        {% for event in events_created %}
+              <div class="event-card">
+                <div class="event-image">
+                    {% if event.spam %}
+                        {% set filename = event.spam.split('/')[-1] %}
+                            <img src="{{ url_for('uploads', filename=filename) }}" alt="Event image for {{ event.eventname }}">
+                    {% else %}
+                      <img src="{{ url_for('static', filename='images/WeEvent_default_event_pic.png') }}" alt="WeEvent default image">
+                    {% endif %}
+                </div>
+                <div class="event-info">
+                  <p class="event-detail">
+                    <span class="event-type {{ event.eventtype|lower }}">{{ event.eventtype }}</span>
+                    {% set tag_list = event.eventtag.split(',') %}
+                    {% for tag in tag_list %}
+                      <span class="event-type {{ tag|trim|lower }}">{{ tag|trim }}</span>
+                    {% endfor %}
+                  </p >  
+                  <h2 class="event-title">{{ event.eventname }}</h2>
+                  <p class="event-detail evnet-date">{{ event.formatted_date }} from {{ event.formatted_starttime }} to {{ event.formatted_endtime }}</p>
+                  <p class="event-detail event-loc">{{ event.eventloc }}</p>
+                  <p class="event-detail event-host">By <a href="{{ url_for('profile', profile_user_id=event.userid) }}">{{ event.username }}</a></p>
+                  <p class="event-detail event-att">{{ event.numattendee}} people attending</p>
+                  <div class="event-actions">
+                    {% if session.uid == user.userid %}
+                      <form action="{{ url_for('update', eventID=event.eventid) }}">
+                      <button type="submit" class="rsvp-button">Update Event</button>
+                      </form>
+                    {% endif %}
+                    <form action="{{ url_for('event', event_id=event.eventid) }}" method="get">
+                    <button type="submit" class="details-button">View Details</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
         {% endfor %}
-      </ul>
+      </div>
+      <div>
+        <h1>Attending:</h1>
+        <div class="event-grid">
+          {% for event in events_attending %}
+          <div class="event-card">
+            <div class="event-image">
+                {% if event.spam %}
+                    {% set filename = event.spam.split('/')[-1] %}
+                        <img src="{{ url_for('uploads', filename=filename) }}" alt="Event image for {{ event.eventname }}">
+                {% else %}
+                  <img src="{{ url_for('static', filename='images/WeEvent_default_event_pic.png') }}" alt="WeEvent default image">
+                {% endif %}
+            </div>
+            <div class="event-info">
+              <p class="event-detail">
+                <span class="event-type {{ event.eventtype|lower }}">{{ event.eventtype }}</span>
+                {% set tag_list = event.eventtag.split(',') %}
+                {% for tag in tag_list %}
+                  <span class="event-type {{ tag|trim|lower }}">{{ tag|trim }}</span>
+                {% endfor %}
+              </p > 
+              <h2 class="event-title">{{ event.eventname }}</h2>
+              <p class="event-detail evnet-date">{{ event.formatted_date }} from {{ event.formatted_starttime }} to {{ event.formatted_endtime }}</p>
+              <p class="event-detail event-loc">{{ event.eventloc }}</p>
+              <p class="event-detail event-host">By <a href="{{ url_for('profile', profile_user_id=event.userid) }}">{{ event.username }}</a></p>
+              <p class="event-detail event-att">{{ event.numattendee}} people attending</p>
+              <div class="event-actions">
+                {% if session.uid and session.usertype == 'personal' and session.uid != event.userid %}
+                  <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">
+                  {% if event.user_rsvped == 'yes'%}
+                    <button id="rsvpButton" type="submit" class="rsvp-button">Cancel RSVP</button>
+                  {% else %}
+                    <button id="rsvpButton" type="submit" class="rsvp-button">RSVP</button>
+                  {%endif%}
+                  </form>
+                {% endif %}
+                <form action="{{ url_for('event', event_id=event.eventid) }}" method="get">
+                <button type="submit" class="details-button">View Details</button>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
     
   </div>
 {% endblock %}

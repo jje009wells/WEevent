@@ -15,42 +15,6 @@
       }
     });
   });
-
-  document.addEventListener('DOMContentLoaded', function() {
-  var rsvpButton = document.getElementById('rsvpButton');
-  if (rsvpButton) {
-    rsvpButton.addEventListener('click', function(e) {
-      e.preventDefault(); // Prevent the form from submitting via the browser.
-
-      var form = this.closest('form'); // Get the form surrounding the button.
-      var actionUrl = form.action; // Get the action URL from the form.
-
-      // Send the form data to the server
-      fetch(actionUrl, {
-        method: 'POST',
-        body: new FormData(form),
-        headers: {
-          'Accept': 'application/json',
-          // Include any additional headers like CSRF tokens if necessary
-        },
-      })
-      .then(response => {
-        if(response.ok) {
-          // If the server responds with a success status, refresh the page
-          window.location.reload();
-        } else {
-          // If the server responds with an error status, alert the user
-          alert('An error occurred. Please try again.');
-        }
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-      });
-    });
-  }
-});
-
 </script>
 {% endblock %}
 
@@ -112,22 +76,26 @@
                 </div>
                 <div class="event-info">
                   <p class="event-detail">
-                    <span class="event-type {{ event.eventtype }}">{{ event.eventtype }}</span>
-                    <span class="event-type {{ event.eventtag }}">{{ event.eventtag }}</span>
-                  </p>  
+                    <span class="event-type {{ event.eventtype|lower }}">{{ event.eventtype }}</span>
+                    {% set tag_list = event.eventtag.split(',') %}
+                    {% for tag in tag_list %}
+                      <span class="event-type {{ tag|trim|lower }}">{{ tag|trim }}</span>
+                    {% endfor %}
+                  </p >  
                   <h2 class="event-title">{{ event.eventname }}</h2>
                   <p class="event-detail evnet-date">{{ event.formatted_date }} from {{ event.formatted_starttime }} to {{ event.formatted_endtime }}</p>
                   <p class="event-detail event-loc">{{ event.eventloc }}</p>
-                  <p class="event-detail event-host">By {{ event.username }}</p>
+                  <p class="event-detail event-host">By <a href="{{ url_for('profile', profile_user_id=event.userid) }}">{{ event.username }}</a></p>
+                  <p class="event-detail event-att">{{ event.numattendee}} people attending</p>
                   <div class="event-actions">
-                    {% if session.uid and session.usertype == 'personal' %}
-                      {% if event.user_rsvped == 'yes'%}
-                        <button class="rsvp-button" disabled>RSVP'd</button>
-                      {% else %}
-                        <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">
-                        <button id="rsvpButton" type="submit" class="rsvp-button">RSVP</button>
-                        </form>
-                      {%endif%}
+                    {% if session.uid and session.usertype == 'personal' and session.uid != event.userid %}
+                      <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">
+                        {% if event.user_rsvped == 'yes'%}
+                          <button id="rsvpButton" type="submit" class="rsvp-button">Cancel RSVP</button>
+                        {% else %}
+                          <button id="rsvpButton" type="submit" class="rsvp-button">RSVP</button>
+                        {%endif%}
+                      </form>
                     {% endif %}
                     <form action="{{ url_for('event', event_id=event.eventid) }}" method="get">
                     <button type="submit" class="details-button">View Details</button>

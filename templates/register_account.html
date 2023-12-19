@@ -1,48 +1,87 @@
 {% extends "base.html" %}
 
 {% block main_content %}
-<h1>Register</h1>
-
-<p>Please join, using one of the forms below:</p>
-
-<form id="register_personal" action="{{url_for('register')}}" method="post">
-    <h2>Personal Account</h2>
-    <p><label>Username: <input type="text" name="username" required pattern="^\w+$"> </label></p>
-    <p><label>Email: <input type="email" name="email" required></label></p>
-    <p><label>Password: <input type="password" name="password1" required></label></p>
-    <p><label>Password again: <input type="password" name="password2" required></label></p>
-    <p><button type="submit" name="submit" value="register_personal">Submit</button></p>
-</form>
-
-<form id="register_org" action="{{url_for('register')}}" method="post">
-    <h2>Org Account</h2>
-    <p><label>Organization Name: <input type="text" name="username" required ></label></p>
-    <p><label>Email: <input type="email" name="email" required></label></p>
-    <p><label>List eboard members: <input type="text" name="eboard" required></p>
-    <p><label for="org_info"> Org Info </label>
-        <textarea id="org_info" name="org_info" required></textarea> </p>
-    <p><label>Password: <input type="password" name="password1" required></label></p>
-    <p><label>Password again: <input type="password" name="password2" required></label></p>
-    <p><button type="submit" name="submit" value="register_org">Submit</button></p>
-</form>
+<div class="register-page">
+    <div class = "login-form">
+        <h1>Welcome to WeEvent</h1>
+        <p>Create your account</p>
+        <form id="registerform" action="{{ url_for('register') }}" method="post">
+            <div class="input-group">
+                <label for="account_type">Account Type:</label>
+                <div class="toggle-switch">
+                    <input type="radio" name="account_type" id="org" value="org" class="account-type-radio">
+                    <label for="org" class="toggle-switch-label">Organization</label>
+                    <input type="radio" name="account_type" id="personal" value="personal" class="account-type-radio">
+                    <label for="personal" class="toggle-switch-label">Personal</label>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Username:</label>
+                <input type="text" name="username" required pattern="^\w+$">
+            </div>
+            <div class="input-group">
+                <label>Email:</label>
+                <input type="email" name="email" required>
+            </div>
+            <div class="input-group">
+                <label>Password:</label>
+                <input type="password" name="password1" required>
+            </div>
+            <div class="input-group">
+                <label>Repeat Password:</label>
+                <input type="password" name="password2" required>
+            </div>
+            <!-- <div class="input-group org-field">
+                <label>List eboard members:</label>
+                <input type="text" name="eboard">
+            </div>
+            <div class="input-group org-field">
+                <label for="org_info">Org Info:</label>
+                <textarea id="org_info" name="org_info"></textarea>
+            </div> -->
+            <div class="action-group">
+                <button type="submit" class="register-btn">Register</button>
+            </div>
+            <div>Already have an account? <a href="{{ url_for('login') }}">Login</a></div>
+        </form>
+    </div>
+    <div class = 'login-image'>
+        <img src="{{ url_for('static', filename='images/undraw_sign_up_n6im.svg') }}" alt="Login illustration">
+    </div>
+</div>
 
 {% endblock %}
     
 
 {% block jquery_scripts %}
 <script>
-$("#joinform").on('submit', function (event) {
-     var pw1 = $(this).find('[name=password1]').val();
-     var pw2 = $(this).find('[name=password2]').val();
-     // should also check for length and common words etc
-     if( pw1 != pw2 ) {
-         // something more sophisticated than alert would be nice
-         alert("passwords don't match");
-     }
+$(document).ready(function(){
+    // Initially hide the organization specific fields
+    $('.org-field').hide();
+
+    // Listen for a change on any radio button within the account_type group
+    $('input[name="account_type"]').change(function() {
+        // Check if the 'org' radio button is checked
+        if($('#org').is(':checked')) {
+            // If 'org' is checked, show the org fields
+            $('.org-field').show();
+        } else {
+            // If 'org' is not checked, hide the org fields
+            $('.org-field').hide();
+        }
+    });
+    
+    // Form validation and submission
+    $("#registerform").on('submit', function(event) {
+        // Perform your validation here...
+        var pw1 = $('input[name="password1"]').val();
+        var pw2 = $('input[name="password2"]').val();
+        if( pw1 != pw2 ) {
+            alert("Passwords don't match.");
+            event.preventDefault(); // Stop form submission if passwords don't match
+        }
+        // If you have other validations, include them here, and call event.preventDefault() if any fail
+    });
 });
 </script>
 {% endblock %}
-
-
-
-

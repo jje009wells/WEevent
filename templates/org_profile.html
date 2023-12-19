@@ -2,57 +2,84 @@
 
 {% block main_content %}
   <div class="org-details-container">
-    <h1>{{ org.username }}</h1>
-    {% if is_following %}
-        <form action="{{ url_for('unfollow', followed=org.userid) }}" method="post">
-            <button type="submit">Unfollow</button>
-        </form>
-    {% else %}
-        <form action="{{ url_for('follow', followed=org.userid) }}" method="post">
-            <button type="submit">Follow</button>
-        </form>
-    {% endif %}
-    <p><strong>Org Email:</strong> <a href="mailto:{{ org.email }}">{{ org.email }}</a></p>
-    <p><strong>E-board:</strong> {{ org.e_board }}</p>
-    <p><strong>Org info:</strong> {{ org.orginfo }}</p>
-    <p><strong>Org ID (for testing purposes only):</strong> {{ org.userid }} </p>
-
-
-    <div class="event-grid">
-      <h2>Hosting:</h2>
-      {% for event in org_event %}
-      <div class="event-card">
-        <div class="event-image">
-            {% if event.spam %}
-                {% set filename = event.spam.split('/')[-1] %}
-                    <img src="{{ url_for('uploads', filename=filename) }}" alt="Event image for {{ event.eventname }}">
-            {% endif %}
-        </div>
-        <div class="event-info">
-          <p class="event-detail">
-            <span class="event-type {{ event.eventtag | lower }}">{{ event.eventtag }}</span>
-          </p>  
-          <h2 class="event-title">{{ event.eventname }}</h2>
-          <p class="event-detail">{{ event.eventdate }} from {{ event.starttime }} to {{ event.endtime }}</p>
-          <p class="event-detail">{{ event.eventloc }}</p>
-          <p class="event-detail">By {{ event.username }}</p>
-          <div class="event-actions">
-            {% if session.uid and session.usertype == 'personal' %}
-                {% if event.rsvp == 'yes' %}
-                    <button class="rsvp-button" disabled>RSVP'd</button>
-                {% else %}
-                    <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">
-                    <button type="submit" class="rsvp-button">RSVP</button>
-                    </form>
-                {% endif %}
-            {% endif %}
-            <form action="{{ url_for('event', event_id=event.eventid) }}" method="get">
-            <button type="submit" class="details-button">View Details</button>
-            </form>
-          </div>
-        </div>
+    <div class="profile-container">
+      <div class="profile-image">
+          <img src="{{ url_for('static', filename='images/Default_profile_image.png') }}" alt="Profile image">
       </div>
-      {% endfor %}
+      <div class="profile-info">
+        <div class = "username-btn">
+          <h1 class="username">{{ org.username }}</h1>
+          {% if session.usertype == 'personal'%}
+            {% if is_following %}
+            <form action="{{ url_for('unfollow', followed=org.userid) }}" method="post">
+            <button type="submit">Unfollow</button>
+            </form>
+            {% else %}
+            <form action="{{ url_for('follow', followed=org.userid) }}" method="post">
+            <button type="submit">Follow</button>
+            </form>
+            {% endif %}
+          {%elif session.usertype == 'org' and session.uid == org.userid%}
+            <form action="{{ url_for('account_management') }}">
+            <button type="submit" class="details-button">Edit Account</button>
+            </form>
+          {%endif%}
+        </div>
+          <p class="user-details">
+              <a href="mailto:{{ org.email }}" class="user-email">{{ org.email }}</a> · {{ org.eboard }}
+          </p>
+          <p class="user-details">{{org.orginfo}}</p>
+      </div>
+    </div>
+
+    <div class="profile-event-wrapper">
+      <h1>Hosting:</h1>
+      <div class="event-grid">
+        {% for event in org_event %}
+                <div class="event-card">
+                  <div class="event-image">
+                      {% if event.spam %}
+                          {% set filename = event.spam.split('/')[-1] %}
+                              <img src="{{ url_for('uploads', filename=filename) }}" alt="Event image for {{ event.eventname }}">
+                      {% else %}
+                        <img src="{{ url_for('static', filename='images/WeEvent_default_event_pic.png') }}" alt="WeEvent default image">
+                      {% endif %}
+                  </div>
+                  <div class="event-info">
+                    <p class="event-detail">
+                      <span class="event-type {{ event.eventtype|lower }}">{{ event.eventtype }}</span>
+                      {% set tag_list = event.eventtag.split(',') %}
+                      {% for tag in tag_list %}
+                        <span class="event-type {{ tag|trim|lower }}">{{ tag|trim }}</span>
+                      {% endfor %}
+                    </p >  
+                    <h2 class="event-title">{{ event.eventname }}</h2>
+                    <p class="event-detail evnet-date">{{ event.formatted_date }} from {{ event.formatted_starttime }} to {{ event.formatted_endtime }}</p>
+                    <p class="event-detail event-loc">{{ event.eventloc }}</p>
+                    <p class="event-detail event-host">By <a href="{{ url_for('profile', profile_user_id=event.userid) }}">{{ event.username }}</a></p>
+                    <p class="event-detail event-att">{{ event.numattendee}} people attending</p>
+                    <div class="event-actions">
+                      {% if session.uid and session.usertype == 'personal' and session.uid != event.userid %}
+                        <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">
+                        {% if event.user_rsvped == 'yes'%}
+                          <button id="rsvpButton" type="submit" class="rsvp-button">Cancel RSVP</button>
+                        {% else %}
+                          <button id="rsvpButton" type="submit" class="rsvp-button">RSVP</button>
+                        {%endif%}
+                        </form>
+                      {% elif session.uid and session.usertype == 'org' and session.uid == org.userid %}
+                        <form action="{{ url_for('update', eventID=event.eventid) }}">
+                        <button type="submit" class="rsvp-button">Update Event</button>
+                        </form>
+                      {% endif %}
+                      <form action="{{ url_for('event', event_id=event.eventid) }}" method="get">
+                      <button type="submit" class="details-button">View Details</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+        {% endfor %}
+      </div>
     </div>
     
   </div>
