@@ -62,10 +62,10 @@ def create_event():
 
             if account_info['usertype'] == 'org':
                 # If the user is an organization, hardcode 'type' field to 'org' in the form
-                return render_template("create_event.html", page_title='Create Event', method="POST", eventtype='org')
+                return render_template("create_event.html", page_title='Create Event', eventtype='org')
             else:
                 # If the user is an individual, hardcode 'type' field to 'personal' in the form
-                return render_template("create_event.html", page_title='Create Event', method="POST", eventtype='personal')
+                return render_template("create_event.html", page_title='Create Event', eventtype='personal')
     else:
         if session.get('uid') is None:
             flash("You are not logged in, please log in to create an event!")
@@ -204,7 +204,6 @@ def profile(profile_user_id=None):
     
     elif usertype.get('usertype') == 'personal':
         # Fetch personal account details and render the personal user profile template
-        # Assuming you have a function to get personal account details
         user = helpers_nov18.get_user_by_userid(conn, profile_user_id)
         events_created = helpers_nov18.get_events_by_user(conn, profile_user_id, current_user_id)
         events_attending = helpers_nov18.get_eventsid_attending(conn,profile_user_id)
@@ -215,9 +214,7 @@ def follow(followed):
     '''
     Button for user to follow org, only personal users can follow organizations.
     '''
-    conn = dbi.connect()
     userid = session.get('uid')
-    usertype = helpers_nov18.get_usertype(conn, userid)
     # Check if the user is logged in
     if userid is None:
         flash('Please log in to follow organizations.')
@@ -229,6 +226,7 @@ def follow(followed):
         flash('Only personal users can follow organizations.')
         return redirect(url_for('index'))
     
+    conn = dbi.connect()
     helpers_nov18.follow(conn,userid,followed)
     orgname = helpers_nov18.get_org_by_userid(conn,followed)
     orgname = orgname.get('username')
@@ -240,8 +238,13 @@ def unfollow(followed):
     '''
     Button for user to follow org
     '''
-    conn = dbi.connect()
     userid = session.get('uid')
+     
+    #check if the user is logged in
+    if userid is None:
+        flash('Please log in to follow organizations.')
+        return redirect(url_for('login'))
+    conn = dbi.connect()
     helpers_nov18.unfollow(conn,userid,followed)
     orgname = helpers_nov18.get_org_by_userid(conn,followed)
     orgname = orgname.get('username')
@@ -286,14 +289,15 @@ def filter_events():
     if request.method == 'POST':
         #get all the filters applied by the user and store in a dictionary
         #rationale: one may want to filter by tags and date  
-        filters = {
-            'date': request.form.get('date'), 
-            'type': request.form.get('type'), 
-            'org_name': request.form.get('org_name'),
-            'tags': request.form.getlist('event_tags'),
-            'orgs_following': request.form.get('orgs_following'),
-            'uid': session.get('uid')
-        }
+        # filters = {
+        #     'date': request.form.get('date'), 
+        #     'type': request.form.get('type'), 
+        #     'org_name': request.form.get('org_name'),
+        #     'tags': request.form.getlist('event_tags'),
+        #     'orgs_following': request.form.get('orgs_following'),
+        #     'uid': session.get('uid')
+        # }
+        filters = request.form
         conn = dbi.connect()
 
         #fetch the events that match the filters via a helper function
@@ -352,29 +356,6 @@ def update(eventID):
                 eventDictToPass = request.form.to_dict()            
                 eventDictToPass['event_tags'] = event_tags
                 print(eventDictToPass)
-
-
-                # #if user wants to upload a new image, give the newly uploaded file a new filename, 
-                # #put it in the uploads folder, and add the new path to the dictionary    
-                # f = request.files['event_image']
-                # if f: 
-                #     try:
-                #         nm = int(eventID) # may throw error
-                #         user_filename = f.filename
-                #         ext = user_filename.split('.')[-1]
-                #         timestamp = int(time.time()) 
-                #         filename = secure_filename('{}_{}.{}'.format(nm,timestamp,ext))
-                #         print(filename)
-                #         pathname = os.path.join(app.config['UPLOADS'],filename)
-                #         print(pathname)
-                #         f.save(pathname)
-                #         flash('Upload successful')
-                #     except Exception as err:
-                #         flash('Upload failed {why}'.format(why=err))
-                #         return render_template('create_event.html')
-                # else: 
-                #     pathname = None
-                # eventDictToPass['event_image'] = pathname
             
                 eventDict = helpers_nov18.update_event(conn, eventDictToPass, eventID,userid)
                 flash(f"Event updated successfully.")
@@ -418,8 +399,6 @@ def update(eventID):
             else: #Shouldn't get here
                 flash(f"ERROR: neither update or delete")
             return redirect(url_for('event', event_id = eventID))
-
-            
 
         #if get request, display the update page for the event
         elif request.method == 'GET':
@@ -517,7 +496,7 @@ def login():
 
 
 # Not sure when best to use this?
-@app.route("/logout")
+@app.route("/logout", methods=['POST'])
 def logout():
     session['username'] = None
     session['uid'] = None
@@ -527,10 +506,13 @@ def logout():
 
 @app.route("/rsvp/<int:event_id>", methods=['POST'])
 def rsvp(event_id):
-    conn = dbi.connect()
 
     user_id = session.get('uid')
+    if user_id is None:
+        flash("You must be logged in to update an event!")
+        return redirect(url_for('login'))
  
+    conn = dbi.connect()
     rsvp_required = helpers_nov18.rsvp_required(conn, event_id)['rsvp']
 
     #registration_status would be None if the user has not rsvped already
