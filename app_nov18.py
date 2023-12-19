@@ -27,8 +27,6 @@ app.config['MAX_CONTENT_LENGTH'] = 1*1024*1024 # 1 MB
 # This gets us better error messages for certain common request errors
 app.config['TRAP_BAD_REQUEST_ERRORS'] = True
 
-# so the that the session will expire eventually?
-#app.config["SESSION_PERMANENT"] = False
 
 @app.route('/')
 def index():
@@ -133,7 +131,14 @@ def create_event():
             helpers_nov18.insert_event_image(conn, event_id, pathname)
             flash("Event successfully created.") 
             return redirect(url_for("event", event_id = event_id))
-            
+
+@app.route('/clear_filters/', methods=['GET'])
+def clear_filters():
+    '''
+    Clears all filters and redirects to the homepage
+    '''
+    return redirect(url_for('index'))
+
 @app.route('/event/<int:event_id>/')
 def event(event_id):
     '''

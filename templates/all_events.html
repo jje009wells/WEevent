@@ -78,6 +78,11 @@ $(document).ready(function() {
 
                 <input type="submit" value="Filter" class="filter-button">
             </form>
+
+            <form action="{{ url_for('clear_filters') }}" method="GET">
+              <button type="submit" aria-label="Clear All Filters">Clear All Filters</button>
+            </form>
+
         </div>
            
         <div class="main-content">
