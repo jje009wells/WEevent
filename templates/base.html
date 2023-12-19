@@ -21,7 +21,7 @@
     <a href="{{ url_for('index') }}" class="logo-link">
       <img src="{{ url_for('static', filename='images/WeEvent_Logo.png') }}" alt="WeEvent Logo" class="logo">
     </a>
-    <form method="POST" action="{{ url_for('search_events') }}" class="search-form">
+    <form method="GET" action="{{ url_for('search_events') }}" class="search-form">
       <div class="search-box">
         <input id="search" type="text" name="search" placeholder="Search an event..." class="search-input" value="{{ search_term|default('') }}">
         <label for="search">Search</label>

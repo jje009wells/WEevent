@@ -288,16 +288,16 @@ def filter_events():
     userid = session.get('uid')
     if request.method == 'POST':
         #get all the filters applied by the user and store in a dictionary
-        #rationale: one may want to filter by tags and date  
-        # filters = {
-        #     'date': request.form.get('date'), 
-        #     'type': request.form.get('type'), 
-        #     'org_name': request.form.get('org_name'),
-        #     'tags': request.form.getlist('event_tags'),
-        #     'orgs_following': request.form.get('orgs_following'),
-        #     'uid': session.get('uid')
-        # }
-        filters = request.form
+        #rationale: one may want to filter by tags and date
+        #want a new dictionary for showing which filters were applied after filtering
+        filters = {
+            'date': request.form.get('date'), 
+            'type': request.form.get('type'), 
+            'org_name': request.form.get('org_name'),
+            'tags': request.form.getlist('event_tags'),
+            'orgs_following': request.form.get('orgs_following'),
+            'uid': session.get('uid')
+        }
         conn = dbi.connect()
 
         #fetch the events that match the filters via a helper function
@@ -309,24 +309,45 @@ def filter_events():
         #if get request, load all events/homepage
         return redirect(url_for('index'))
 
-@app.route('/search_events/', methods=['GET', 'POST'])
+# @app.route('/search_events/', methods=['GET', 'POST'])
+# def search_events():
+#     '''
+#     Renders a page where the user can search events by their names
+#     '''
+#     if request.method == 'POST':
+#         userid = session.get('uid')
+        
+#         if userid is None:
+#             flash("You must be logged in to update an event!")
+#             return redirect(url_for('login'))
+
+#         search_term = request.form.get('search')
+#         conn = dbi.connect()
+#         userid = session.get('uid')
+#         #fetch events whose eventname contain the search term via a helper function
+#         events = helpers_nov18.search_events(conn, search_term,userid=userid)
+#         upcoming_events = helpers_nov18.get_upcoming_events(events)
+#         return render_template('all_events.html', page_title='All Events', events=events, search_term = search_term,upcoming_events=upcoming_events)
+    
+#     #if get request, just display all the events
+#     else: 
+#         return redirect(url_for('index'))
+
+@app.route('/search_events/', methods=['GET'])
 def search_events():
     '''
     Renders a page where the user can search events by their names
     '''
-    if request.method == 'POST':
-        search_term = request.form.get('search')
+    search_term = request.args.get('search')
+    if search_term:
         conn = dbi.connect()
         userid = session.get('uid')
-        #fetch events whose eventname contain the search term via a helper function
-        events = helpers_nov18.search_events(conn, search_term,userid=userid)
+        # fetch events whose eventname contains the search term via a helper function
+        events = helpers_nov18.search_events(conn, search_term, userid=userid)
         upcoming_events = helpers_nov18.get_upcoming_events(events)
-        return render_template('all_events.html', page_title='All Events', events=events, search_term = search_term,upcoming_events=upcoming_events)
-    
-    #if get request, just display all the events
-    else: 
+        return render_template('all_events.html', page_title='All Events', events=events, search_term=search_term, upcoming_events=upcoming_events)
+    else:
         return redirect(url_for('index'))
-
 
 @app.route('/update/<int:eventID>', methods=['GET','POST'])
 def update(eventID):
