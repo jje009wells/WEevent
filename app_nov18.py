@@ -368,7 +368,7 @@ def update(eventID):
                 #     pathname = None
                 # eventDictToPass['event_image'] = pathname
             
-                eventDict = helpers_nov18.update_event(conn, eventDictToPass, eventID)
+                eventDict = helpers_nov18.update_event(conn, eventDictToPass, eventID,userid)
                 flash(f"Event updated successfully.")
             
             #if the user clicked on the delete button
@@ -402,7 +402,7 @@ def update(eventID):
                 else: 
                     pathname = None
                 
-                eventDict = helpers_nov18.update_event_spam(conn, pathname, eventID)
+                eventDict = helpers_nov18.update_event_spam(conn, pathname, eventID,userid)
                 print(eventDict)
                 event_tags = eventDict.get('eventtag')
                 flash(f"Image updated successfully.")

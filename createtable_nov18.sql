@@ -1,4 +1,4 @@
-use jw103_db; 
+use weevent_db; 
 
 drop table if exists QA;
 drop table if exists registration;
