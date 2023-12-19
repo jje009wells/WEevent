@@ -50,7 +50,7 @@ $(document).ready(function() {
 
                 <div class="filter-section">
                   <label for="org_filter_name" class="filter-lable">By Org</label>
-                  <input type="text" id="org_name" name="org_name" placeholder="Search Org" value="{{ filters['org_name']|default('') if filters is defined else '' }}">
+                  <input type="text" id="org_filter_name" name="org_name" placeholder="Search Org" value="{{ filters['org_name']|default('') if filters is defined else '' }}">
                 </div>
                 
                 <div class="filter-section">
