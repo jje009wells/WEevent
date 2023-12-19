@@ -403,9 +403,11 @@ def update(eventID):
                 else: 
                     pathname = None
                 
-                eventDict = helpers_nov18.update_event_spam(conn, pathname, eventID,userid)
-                print(eventDict)
-                event_tags = eventDict.get('eventtag')
+                eventDict = helpers_nov18.insert_event_image(conn, eventID, pathname)
+                #print(eventDict)
+                #event_tags = eventDict.get('eventtag')
+                eventDict2 = helpers_nov18.get_event_by_id(conn, eventID, userid)
+                print("This is what is in the spam right now: ", eventDict2.get('spam'))
                 flash(f"Image updated successfully.")
 
             else: #Shouldn't get here
@@ -417,8 +419,9 @@ def update(eventID):
         #if get request, display the update page for the event
         elif request.method == 'GET':
             eventDict = helpers_nov18.get_event_by_id(conn, eventID, userid)
+            #print(eventDict)
             event_tags = eventDict.get("eventtag")
-            print(eventDict.get('starttime'))
+            #print(eventDict.get('starttime'))
 
             if eventDict == None: 
                 #technically shouldn't happen as user is only shown the option to update events already created, but just to be safe

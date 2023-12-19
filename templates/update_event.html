@@ -115,9 +115,16 @@
           </div>
         </td>
       </tr>
-      <!-- will need to update this once the image upload is complete -->
+      
+    </table>
+    <input type="submit" name="submit" value="update">
+    <input type="submit" name="submit" value="delete">
+  </form>
+  <h2>Update Spam - Optional</h2>
+    <form method="POST" action="{{url_for('update', eventID=eventDict.eventid)}}" enctype="multipart/form-data">
+      <!-- a separate form, to plimit issues with accidentally update or clearing form data -->
       <tr>
-        <td><label for="event_image">Upload Image (Spam - Optional)</label></td>
+        <td><label for="event_image">To remove current spam, leave file unchosen and click update.</label></td>
         {% if eventDict.spam %}
           <p> File: {{ eventDict.spam }} uploaded previously.</p>
         {% else %}
@@ -125,10 +132,8 @@
         {% endif %}
         <td><input type="file" id="event_image" name="event_image"></td>
       </tr>
-    </table>
-    <input type="submit" name="submit" value="update">
-    <input type="submit" name="submit" value="delete">
-  </form>
+      <input type="submit" name="submit" value="update_spam">
+    </form>
 </div>
     
 {% endblock %}
