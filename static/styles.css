@@ -139,18 +139,21 @@ button {
     border-radius: 12px;
   }
   
-  .user-dropdown a {
+  .user-dropdown a,
+  .user-dropdown form .logout {
     color: #696363;
     padding: 12px 16px;
     text-decoration: none;
     display: block;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
   }
-
-  .user-dropdown a:hover {
+  
+  .user-dropdown a:hover,
+  .user-dropdown form .logout:hover {
     color: #333;
-    padding: 12px 16px;
-    text-decoration: none;
-    display: block;
   }
   
   .user-menu:hover .user-dropdown {
@@ -249,6 +252,13 @@ button {
   border-radius: 12px;
 }
 
+.filter-head{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .filter-form {
   display: flex;
   flex-direction: column;
@@ -288,13 +298,23 @@ button {
 
 .filter-button {
   padding: 10px 20px;
-  background-color: #0055B0; /* your primary color */
+  background-color: #0055B0;
   border: none;
   color: white;
   border-radius: 12px; /* rounded borders */
   cursor: pointer;
   font-size: 16px;
   font-weight: bold;
+}
+
+.clear-filter-button {
+  padding: 10px 20px;
+  background-color: transparent;
+  border: none;
+  color: #0055B0;
+  border-radius: 12px; 
+  cursor: pointer;
+  font-size: 16px;
 }
 
 /* Style for the main content */

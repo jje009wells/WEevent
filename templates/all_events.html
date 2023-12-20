@@ -41,7 +41,12 @@ $(document).ready(function() {
 <body>
     <div class="filter-content-wrapper">
         <div class="filter-bar">
-            <h2>Filter</h2>
+            <div class="filter-head">
+              <h2>Filter</h2>
+              <form action="{{ url_for('clear_filters') }}" method="GET">
+                <button type="submit" aria-label="Clear All Filters" class="clear-filter-button">Clear all</button>
+              </form>
+            </div>
               <!-- Filter Bar -->
               <form method="POST" action="{{ url_for('filter_events') }}" class="filter-form">
                 <!-- Date Filter -->
@@ -49,9 +54,10 @@ $(document).ready(function() {
                 <input type="hidden" id="date" name="date" value="{{ filters['date']|default('') if filters is defined else''}}" >
 
                 <div class="filter-section">
-                    <label for="org_name" class="filter-lable">By Org</label>
-                    <input type="text" id="org_name" name="org_name" placeholder="Search Org" value="{{ filters['org_name']|default('') if filters is defined else '' }}">
+                  <label for="org_filter_name" class="filter-lable">By Org</label>
+                  <input type="text" id="org_filter_name" name="org_name" placeholder="Search Org" value="{{ filters['org_name']|default('') if filters is defined else '' }}">
                 </div>
+                
                 <div class="filter-section">
                     <label class="filter-lable">By Account Type</label>
                     <label><input type="radio" name="type" value="org" {% if filters is defined and filters['type'] == 'org' %}checked{% endif %}> Organization</label>
@@ -108,9 +114,11 @@ $(document).ready(function() {
                   <p class="event-detail evnet-date">{{ event.formatted_date }} from {{ event.formatted_starttime }} to {{ event.formatted_endtime }}</p>
                   <p class="event-detail event-loc">{{ event.eventloc }}</p>
                   <p class="event-detail event-host">By <a href="{{ url_for('profile', profile_user_id=event.userid) }}">{{ event.username }}</a></p>
-                  <p class="event-detail event-att">{{ event.numattendee}} people attending</p>
+                  {% if event.rsvp == 'yes'%}
+                    <p class="event-detail event-att">{{ event.numattendee}} people attending</p>
+                  {% endif %}
                   <div class="event-actions">
-                    {% if session.uid and session.usertype == 'personal' and session.uid != event.userid %}
+                    {% if session.uid and session.usertype == 'personal' and session.uid != event.userid and event.rsvp == 'yes' %}
                       <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">
                         {% if event.user_rsvped == 'yes'%}
                           <button id="rsvpButton" type="submit" class="rsvp-button">Cancel RSVP</button>

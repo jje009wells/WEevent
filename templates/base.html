@@ -21,7 +21,7 @@
     <a href="{{ url_for('index') }}" class="logo-link">
       <img src="{{ url_for('static', filename='images/WeEvent_Logo.png') }}" alt="WeEvent Logo" class="logo">
     </a>
-    <form method="POST" action="{{ url_for('search_events') }}" class="search-form">
+    <form method="GET" action="{{ url_for('search_events') }}" class="search-form">
       <div class="search-box">
         <input id="search" type="text" name="search" placeholder="Search an event..." class="search-input" value="{{ search_term|default('') }}">
         <label for="search">Search</label>
@@ -37,7 +37,10 @@
           <button class="user-action">{{ session.username }}</button>
           <div class="user-dropdown">
             <a href="{{ url_for('profile', profile_user_id=session.uid) }}">Profile</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
+            <!-- <a href="{{ url_for('logout') }}">Logout</a> -->
+            <form method="POST" action="{{ url_for('logout') }}" id="logout-form" class="logout-form">
+              <button type="submit" class="logout">Logout</button>
+            </form>
           </div>
         </div>
         <a href="{{ url_for('create_event') }}" class="user-action user-action-signup">Create an Event</a>

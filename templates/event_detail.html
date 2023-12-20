@@ -39,38 +39,40 @@ function toggleReplyForm(button) {
           <h2>Description</h2>
           <p>{{event.fulldesc}}</p>
         </div>
-        <h2>Attendees</h2>
-        <p class="event-detail event-att">{{ event.numattendee}} people attending</p>
-        {% if event.numattendee !=0 and (uid in event.attendees or session.uid == event.organizerid) %}
-          <table class="table-rsvp">
-            <thead>
-              <tr>
-                <div class="tablehead">
-                  <th>Username</th>
-                  <th>Email</th>
-                </div>
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in rsvp_info %}
+        {% if event.rsvp == 'yes'%}
+          <h2>Attendees</h2>
+          <p class="event-detail event-att">{{ event.numattendee}} people attending</p>
+          {% if event.numattendee !=0 and (uid in event.attendees or session.uid == event.organizerid) %}
+            <table class="table-rsvp">
+              <thead>
                 <tr>
-                  <td><a href="{{ url_for('profile', profile_user_id=row.userid) }}">{{ row.username }}</a></td>
-                  <td><a href="mailto:{{ row.email }}">{{ row.email }}</a></td>
+                  <div class="tablehead">
+                    <th>Username</th>
+                    <th>Email</th>
+                  </div>
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        {% endif %}
-        <div class = "div-10px"></div>
-        {% if session.uid and session.usertype == 'personal' and session.uid != event.userid %}
-          <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">
-            {% if event.user_rsvped == 'yes'%}
-              <button id="rsvpButton" type="submit" class="rsvp-button">Cancel RSVP</button>
-            {% else %}
-              <button id="rsvpButton" type="submit" class="rsvp-button">RSVP</button>
-            {%endif%}
-          </form>  
-        {% endif %}
+              </thead>
+              <tbody>
+                {% for row in rsvp_info %}
+                  <tr>
+                    <td><a href="{{ url_for('profile', profile_user_id=row.userid) }}">{{ row.username }}</a></td>
+                    <td><a href="mailto:{{ row.email }}">{{ row.email }}</a></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+          <div class = "div-10px"></div>
+          {% if session.uid and session.usertype == 'personal' and session.uid != event.userid %}
+            <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">
+              {% if event.user_rsvped == 'yes'%}
+                <button id="rsvpButton" type="submit" class="rsvp-button">Cancel RSVP</button>
+              {% else %}
+                <button id="rsvpButton" type="submit" class="rsvp-button">RSVP</button>
+              {%endif%}
+            </form>  
+          {% endif %}
+        {% endif%}
         <div class="div-10px"></div>
         <div class="div-10px"></div>
         {% if session.uid == event.organizerid %}
