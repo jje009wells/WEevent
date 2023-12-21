@@ -70,7 +70,6 @@ def create_event():
         if session.get('uid') is None:
             flash("You are not logged in, please log in to create an event!")
             return redirect(url_for('login'))
-            flash('I get here when its a post')
         else:
             accountInfo = helpers_nov18.get_account_info(conn, userID=session.get('uid'))
             organizer_id = session.get('uid')
