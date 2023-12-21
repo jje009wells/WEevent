@@ -158,7 +158,7 @@ $(document).ready(function() {
                     {% endfor %}
                   </p >  
                   <h2 class="event-title">{{ event.eventname }}</h2>
-                  <p class="event-detail evnet-date">{{ event.formatted_date }} from {{ event.formatted_starttime }} to {{ event.formatted_endtime }}</p>
+                  <p class="event-detail event-date">{{ event.formatted_date }} from {{ event.formatted_starttime }} to {{ event.formatted_endtime }}</p>
                   <p class="event-detail event-loc">{{ event.eventloc }}</p>
                   <p class="event-detail event-host">By <a href="{{ url_for('profile', profile_user_id=event.userid) }}">{{ event.username }}</a></p>
                   {% if event.rsvp == 'yes'%}

@@ -336,7 +336,7 @@ def get_filtered_events(conn, filters,userid):
             eventcreated.fulldesc, eventcreated.contactemail, eventcreated.spam, eventcreated.numattendee, account.userid as userid, 
             account.usertype, account.username, account.email
         from eventcreated, account, registration
-        where 1=1 and eventcreated.organizerid = account.userid and eventcreated.eventid = registration.eventid
+        where 1=1 and eventcreated.organizerid = account.userid
         '''
         parameters = []
     else: 
@@ -346,7 +346,7 @@ def get_filtered_events(conn, filters,userid):
             eventcreated.fulldesc, eventcreated.contactemail, eventcreated.spam, eventcreated.numattendee, account.userid as userid, 
             account.usertype, account.username, account.email, IF(%s IN (SELECT participant FROM registration WHERE eventid = eventcreated.eventid), 'yes', 'no') AS user_rsvped
             from eventcreated, account, registration
-            where 1=1 and eventcreated.organizerid = account.userid and eventcreated.eventid = registration.eventid
+            where 1=1 and eventcreated.organizerid = account.userid
         '''
         parameters = [userid]
 
