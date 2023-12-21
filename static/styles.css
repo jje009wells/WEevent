@@ -308,11 +308,9 @@ button {
 }
 
 .clear-filter-button {
-  padding: 10px 20px;
   background-color: transparent;
   border: none;
   color: #0055B0;
-  border-radius: 12px; 
   cursor: pointer;
   font-size: 16px;
 }

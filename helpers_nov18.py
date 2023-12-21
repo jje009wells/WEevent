@@ -104,7 +104,7 @@ def get_event_by_id(conn, event_id, userid):
         select ec.eventid, ec.organizerid, ec.eventname, ec.eventtype, ec.shortdesc,
             ec.eventdate, ec.starttime, ec.endtime, ec.eventloc, ec.rsvp, ec.eventtag, ec.fulldesc,
             ec.contactemail, ec.spam, ec.numattendee, acc.userid as userid, acc.usertype, 
-            acc.username, acc.email, GROUP_CONCAT(reg.participant) as attendees, 
+            acc.username, acc.email, acc.profile_pic, GROUP_CONCAT(reg.participant) as attendees, 
             IF(%s IN (SELECT participant FROM registration WHERE eventid = ec.eventid), 'yes', 'no') AS user_rsvped
         FROM eventcreated ec
         JOIN account acc ON ec.organizerid = acc.userid
@@ -424,15 +424,40 @@ def get_followed_orgs(conn, userid):
 def get_account_info(conn, userID):
     """
     Gets basic account info with the given account ID
-    This info includes userid, username, usertype, and email (does not include hashed passwd)
+    This info includes userid, username, usertype, email, and profile picture (does not include hashed passwd)
     """
     curs = dbi.dict_cursor(conn)
     curs.execute(
         """
-        select userid, username, usertype, email from account
-        where userid = %s;
+        SELECT userid, username, usertype, email, profile_pic FROM account
+        WHERE userid = %s;
         """, [userID]
     )
+    return curs.fetchone()
+
+def update_profile_picture(conn, user_id, picture_path):
+    """
+    Updates the profile picture path for a user.
+    """
+    
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''
+        UPDATE account
+        SET profile_pic = %s
+        WHERE userid = %s;
+    ''', [picture_path, user_id])
+    conn.commit()
+
+def get_profile_picture(conn, user_id):
+    """
+    Retrieves the profile picture path for a user.
+    """
+    curs = dbi.dict_cursor(conn)
+    curs.execute('''
+        SELECT profile_pic
+        FROM account
+        WHERE userid = %s;
+    ''', [user_id])
     return curs.fetchone()
 
 def delete_event(conn, eventID):
@@ -531,41 +556,57 @@ def get_rsvp_info(conn, event_id):
 ######### helpers related to changing account information ######### 
 def update_account(conn, formData, userID):
     """
-    Updates account with info gathered info from form.
-    Returns the full updated account dictionary
+    Updates account with info gathered from form, including the profile picture.
+    Allows updating username, email, and profile picture independently.
+    Returns the full updated account dictionary.
     """
     curs = dbi.dict_cursor(conn)
-    
+    username = formData.get('username')
+    email = formData.get('email')
+    profile_pic = formData.get('profile_pic')
 
-    if (get_account_info(conn,userID).get('usertype') == 'personal'):
-        #update an account with new data
-        curs.execute(
-            """
-            update account
-            set username = %s, email = %s
-            where userid = %s;
-            """, [formData.get('username'), formData.get('email'), userID]
-        )
-        conn.commit()
-    else: # the usertype must be org
-        curs.execute(
-            """
-            update account
-            set username = %s, email = %s
-            where userid = %s;
-            """, [formData.get('username'), formData.get('email'), userID]
-        )
-        curs.execute(
-            """
-            update org_account
-            set eboard = %s, orginfo = %s
-            where userid = %s;
-            """, [formData.get('eboard'), formData.get('org_info'), userID]
-        )
-        conn.commit()
+    # Update username and email if provided
+    if username or email:
+        if get_account_info(conn, userID).get('usertype') == 'personal':
+            curs.execute(
+                """
+                UPDATE account
+                SET username = COALESCE(%s, username), email = COALESCE(%s, email)
+                WHERE userid = %s;
+                """, [username, email, userID]
+            )
+        else:  # The usertype is 'org'
+            eboard = formData.get('eboard')
+            org_info = formData.get('org_info')
+            curs.execute(
+                """
+                UPDATE account
+                SET username = COALESCE(%s, username), email = COALESCE(%s, email)
+                WHERE userid = %s;
+                """, [username, email, userID]
+            )
+            curs.execute(
+                """
+                UPDATE org_account
+                SET eboard = %s, orginfo = %s
+                WHERE userid = %s;
+                """, [eboard, org_info, userID]
+            )
 
-    accountDict = get_account_info(conn,userID)
+    # Update profile picture if provided
+    if profile_pic:
+        curs.execute(
+            """
+            UPDATE account
+            SET profile_pic = %s
+            WHERE userid = %s;
+            """, [profile_pic, userID]
+        )
+
+    conn.commit()
+    accountDict = get_account_info(conn, userID)
     return accountDict
+
 
 def update_password(conn, passwd, userID):
     """
@@ -599,7 +640,7 @@ def get_qa(conn,event_id):
     curs = dbi.dict_cursor(conn)
     curs.execute('''
         select QA.QAID, QA.eventid, QA.userid, QA.question, QA.answer, QA.questionDate, QA.answerDate,
-        account.userid , account.username, account.email from QA, account where eventid = %s and QA.userid = account.userid;
+        account.userid , account.username, account.email, account.profile_pic from QA, account where eventid = %s and QA.userid = account.userid;
     ''', [event_id])
     return curs.fetchall()
 

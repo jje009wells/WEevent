@@ -88,14 +88,24 @@ function toggleReplyForm(button) {
               <div class="div-10px"></div>
               <div class="div-10px"></div>
               <div class="question-container">
-                <img src="{{ url_for('static', filename='images/Default_profile_image.png') }}" alt="Profile Image" class="qa-img">
+                {% if question.profile_pic.startswith('uploads/') %}
+                  {% set filename = question.profile_pic.split('/')[-1] %}
+                    <img src="{{ url_for('uploads', filename=filename) }}" alt="User Profile Image" class="qa-img">
+                {% else %}
+                  <img src="{{ url_for('static', filename='images/Default_profile_image.png') }}" alt="User Profile Image" class="qa-img" >
+                {% endif %}
                 <div class="question-text">
                   <p class="question-user-date">{{ question.username }} · {{ question.questionDate }}</p>
                   <p class="question-content">{{ question.question }}</p>
                   {% if question.answer %}
                     <div class="div-10px"></div>
                     <div class="question-container">
-                      <img src="{{ url_for('static', filename='images/Default_profile_image.png') }}" alt="Profile Image" class="reply-img">
+                      {% if event.profile_pic.startswith('uploads/') %}
+                        {% set filename = event.profile_pic.split('/')[-1] %}
+                          <img src="{{ url_for('uploads', filename=filename) }}" alt="Org Profile Image" class="reply-img">
+                      {% else %}
+                        <img src="{{ url_for('static', filename='images/Default_profile_image.png') }}" alt="Org Profile Image" class="reply-img">
+                      {% endif %}
                       <div class="question-text">
                         <p class="question-user-date">{{ event.username }} · {{ question.answerDate }}</p>
                         <p class="question-content">{{ question.answer }}</p>
@@ -104,7 +114,12 @@ function toggleReplyForm(button) {
                   {% elif session.uid == event.organizerid %}
                     <button class="reply-btn" onclick="toggleReplyForm(this)">Reply</button>
                     <form action="{{ url_for('answer_question', event_id=event.eventid, QAID=question.QAID) }}" method="post" class="search-form" style="display: none;">
-                      <img src="{{ url_for('static', filename='images/Default_profile_image.png') }}" alt="Profile Image" class="reply-img">
+                      {% if event.profile_pic.startswith('uploads/') %}
+                        {% set filename = event.profile_pic.split('/')[-1] %}
+                          <img src="{{ url_for('uploads', filename=filename) }}" alt="Org Profile Image" class="reply-img">
+                      {% else %}
+                        <img src="{{ url_for('static', filename='images/Default_profile_image.png') }}" alt="Org Profile Image" class="reply-img">
+                      {% endif %}
                       <input id="reply_content" type="text" name="reply_content" placeholder="Answer here..." class="search-input">
                       <label for="reply_content">Reply</label>
                       <button type="submit" class="search-btn" alt="reply-btn">
@@ -124,7 +139,12 @@ function toggleReplyForm(button) {
       {% if session.uid and session.usertype == 'personal' and session.uid != event.userid %}
         <div class="qa-container">
           <form action="{{ url_for('ask_question', event_id=event.eventid) }}" method="post" class="search-form">
-            <img src="{{ url_for('static', filename='images/Default_profile_image.png') }}" alt="Profile Image" class="qa-img">
+            {% if session.userProfilePic.startswith('uploads/') %}
+              {% set filename = session.userProfilePic.split('/')[-1] %}
+                <img src="{{ url_for('uploads', filename=filename) }}" alt="User Profile Image" class="qa-img">
+            {% else %}
+              <img src="{{ url_for('static', filename='images/Default_profile_image.png') }}" alt="User Profile Image" class="qa-img">
+            {% endif %}
             <div class="search-box"> 
               <input id="question_content" type="text" name="question_content" placeholder="Ask a question..." class="search-input">
               <label for="question_content">Ask</label>   
@@ -142,7 +162,7 @@ function toggleReplyForm(button) {
             {% set filename = event.spam.split('/')[-1] %}
                 <img src="{{ url_for('uploads', filename=filename) }}" alt="Event image for {{ event.eventname }}">
         {% else %}
-          <img src="{{ url_for('static', filename='images/WeEvent_default_event_pic.png') }}" alt="WeEvent default image">
+          <img src="{{ url_for('static', filename='static/images/WeEvent_default_event_pic.png') }}" alt="WeEvent default image">
         {% endif %}
       </div>
   </div>
