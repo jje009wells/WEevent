@@ -291,8 +291,90 @@ def search_orgs_by_keyword(conn, search_term):
     curs.execute(query, ('%' + search_term + '%',))
     return curs.fetchall()
 
-#########  helpers related to filtering and searching ######### 
-def get_filtered_events(conn, filters,userid):
+########  helpers related to filtering and searching ######### 
+# def get_filtered_events(conn, filters,userid):
+#     '''
+#     Gets events matching certain filters
+#     '''
+#     curs = dbi.dict_cursor(conn)
+
+#     #sample final query: 
+#     #select *
+#     #    from eventcreated where 
+#     #    eventdate = ... and eventtype = ... and (eventtag like ... or event tag like ...)
+#     #want to build this up from individual strings
+    
+#     #initilize list of parameters to replace %s
+#     if userid is None:
+#         query = '''
+#         select eventcreated.eventid, eventcreated.organizerid, eventcreated.eventname, eventcreated.eventtype, eventcreated.shortdesc,
+#             eventcreated.eventdate, eventcreated.starttime, eventcreated.endtime, eventcreated.eventloc, eventcreated.rsvp, eventcreated.eventtag, 
+#             eventcreated.fulldesc, eventcreated.contactemail, eventcreated.spam, eventcreated.numattendee, account.userid as userid, 
+#             account.usertype, account.username, account.email
+#         from eventcreated, account, registration
+#         where 1=1 and eventcreated.organizerid = account.userid and eventcreated.eventid = registration.eventid
+#         '''
+#         parameters = []
+#     else: 
+#         query = '''
+#         select eventcreated.eventid, eventcreated.organizerid, eventcreated.eventname, eventcreated.eventtype, eventcreated.shortdesc,
+#             eventcreated.eventdate, eventcreated.starttime, eventcreated.endtime, eventcreated.eventloc, eventcreated.rsvp, eventcreated.eventtag, 
+#             eventcreated.fulldesc, eventcreated.contactemail, eventcreated.spam, eventcreated.numattendee, account.userid as userid, 
+#             account.usertype, account.username, account.email, IF(%s IN (SELECT participant FROM registration WHERE eventid = eventcreated.eventid), 'yes', 'no') AS user_rsvped
+#             from eventcreated, account, registration
+#             where 1=1 and eventcreated.organizerid = account.userid and eventcreated.eventid = registration.eventid
+#         '''
+#         parameters = [userid]
+
+
+#     #first checks if the user used a date/type/tag/org_name filter at all
+#     #if not, do not want it in the query
+#     if filters.get('date'):
+#         query += ' and eventdate = %s'
+#         parameters.append(filters['date']) #get user input 
+
+#     if filters.get('type'): 
+#         query += ' and eventtype = %s'
+#         parameters.append(filters['type'])
+
+#     if filters.get('org_name'):
+#         #the event table does not have a column called org_name, it only has organizerid
+#         #checks if the org_name matches the username in the account table, then select events 
+#         #with a matching organizerid
+#         query += ' and organizerid in (select userid from account where username LIKE %s)'
+#         parameters.append('%{}%'.format(filters['org_name']))
+
+#     tags_to_filter = filters.get('tags') #this is a list of tags inputted by the user
+#     if tags_to_filter: 
+#         #note: if the user selects career and academic as their tags, 
+#         #we assume that that the user wants to see events with the career tag or the academic tag
+#         #(not events with the the career tag and the academic tag simultaneously)
+#         tag_conditions = []
+
+#         #for each tag in the list, want to check if the eventtag colum contains that tag
+#         for tag in tags_to_filter: 
+#             tag_conditions.append("eventtag like %s")
+#             parameters.append('%{}%'.format(tag))
+        
+#         #assemble the final string 
+#         query += ' and (' + ' or '.join(tag_conditions) + ')'   
+    
+#     if filters.get('orgs_following'):
+#         query += ' and organizerid in (select followed from person_interest where follower = %s)'
+#         parameters.append(filters['uid'])
+
+#     query += 'group by eventcreated.eventid order by eventcreated.eventdate, eventcreated.starttime;'
+
+#     curs.execute(query, parameters)
+#     events = curs.fetchall()
+
+#     # Formatting the date for each event
+#     for event in events:
+#         event = formate_date(event)
+
+#     return events
+
+def get_filtered_events(conn, filters):
     '''
     Gets events matching certain filters
     '''
@@ -303,29 +385,18 @@ def get_filtered_events(conn, filters,userid):
     #    from eventcreated where 
     #    eventdate = ... and eventtype = ... and (eventtag like ... or event tag like ...)
     #want to build this up from individual strings
-    
-    #initilize list of parameters to replace %s
-    if userid is None:
-        query = '''
+    #always start with select select * from eventcreated where...
+    query = '''
         select eventcreated.eventid, eventcreated.organizerid, eventcreated.eventname, eventcreated.eventtype, eventcreated.shortdesc,
             eventcreated.eventdate, eventcreated.starttime, eventcreated.endtime, eventcreated.eventloc, eventcreated.rsvp, eventcreated.eventtag, 
             eventcreated.fulldesc, eventcreated.contactemail, eventcreated.spam, eventcreated.numattendee, account.userid as userid, 
             account.usertype, account.username, account.email
-        from eventcreated, account, registration
-        where 1=1 and eventcreated.organizerid = account.userid and eventcreated.eventid = registration.eventid
+        from eventcreated inner join account on (eventcreated.organizerid = account.userid)  
+        where 1=1
         '''
-        parameters = []
-    else: 
-        query = '''
-        select eventcreated.eventid, eventcreated.organizerid, eventcreated.eventname, eventcreated.eventtype, eventcreated.shortdesc,
-            eventcreated.eventdate, eventcreated.starttime, eventcreated.endtime, eventcreated.eventloc, eventcreated.rsvp, eventcreated.eventtag, 
-            eventcreated.fulldesc, eventcreated.contactemail, eventcreated.spam, eventcreated.numattendee, account.userid as userid, 
-            account.usertype, account.username, account.email, IF(%s IN (SELECT participant FROM registration WHERE eventid = eventcreated.eventid), 'yes', 'no') AS user_rsvped
-            from eventcreated, account, registration
-            where 1=1 and eventcreated.organizerid = account.userid and eventcreated.eventid = registration.eventid
-        '''
-        parameters = [userid]
 
+    #initilize list of parameters to replace %s
+    parameters = []
 
     #first checks if the user used a date/type/tag/org_name filter at all
     #if not, do not want it in the query
@@ -333,7 +404,7 @@ def get_filtered_events(conn, filters,userid):
         query += ' and eventdate = %s'
         parameters.append(filters['date']) #get user input 
 
-    if filters.get('type'): 
+    if filters.get('type'):
         query += ' and eventtype = %s'
         parameters.append(filters['type'])
 
@@ -343,7 +414,7 @@ def get_filtered_events(conn, filters,userid):
         #with a matching organizerid
         query += ' and organizerid in (select userid from account where username LIKE %s)'
         parameters.append('%{}%'.format(filters['org_name']))
-        
+    
     tags_to_filter = filters.get('tags') #this is a list of tags inputted by the user
     if tags_to_filter: 
         #note: if the user selects career and academic as their tags, 
@@ -364,7 +435,11 @@ def get_filtered_events(conn, filters,userid):
         parameters.append(filters['uid'])
 
     query += 'group by eventcreated.eventid order by eventcreated.eventdate, eventcreated.starttime;'
+     
+    #print("Query:", query)
+    #print("Parameters:", parameters)
 
+    #get all the events matching the filters 
     curs.execute(query, parameters)
     events = curs.fetchall()
 
