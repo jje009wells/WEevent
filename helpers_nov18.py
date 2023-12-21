@@ -280,6 +280,16 @@ def is_following(conn, follower, followed):
     count = curs.fetchone()[0]
     return count > 0
 
+def search_orgs_by_keyword(conn, search_term):
+    '''Gets a list of orgs that match a search term
+    '''
+    curs = dbi.dict_cursor(conn)
+    query = '''select org_account.userid, account.username
+            from org_account inner join account on org_account.userid = account.userid
+            where account.username like %s;'''
+    
+    curs.execute(query, ('%' + search_term + '%',))
+    return curs.fetchall()
 
 #########  helpers related to filtering and searching ######### 
 def get_filtered_events(conn, filters,userid):
