@@ -12,11 +12,24 @@ def timedelta_to_time(td):
 
 def formate_date(event):
     event['formatted_date'] = event['eventdate'].strftime('%b %-d, %Y')
+
+    # Convert timedelta to time for start and end times
     start_time = timedelta_to_time(event['starttime'])
     end_time = timedelta_to_time(event['endtime'])
-    event['formatted_starttime'] = start_time.strftime('%-I%p').lower().replace(':00', '')
-    event['formatted_endtime'] = end_time.strftime('%-I:%M%p').lower().replace(':00', '')
+
+    # Check if minutes are zero, and format accordingly
+    if start_time.minute == 0:
+        event['formatted_starttime'] = start_time.strftime('%-I%p').lower()
+    else:
+        event['formatted_starttime'] = start_time.strftime('%-I:%M%p').lower()
+
+    if end_time.minute == 0:
+        event['formatted_endtime'] = end_time.strftime('%-I%p').lower()
+    else:
+        event['formatted_endtime'] = end_time.strftime('%-I:%M%p').lower()
+
     return event
+
 
 def get_events_by_user(conn, profile_userid, current_user_id):
     """
