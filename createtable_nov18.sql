@@ -16,12 +16,11 @@ CREATE TABLE account (
   usertype enum('personal', 'org') not null,
   username varchar(40) not null,
   email varchar(40), 
-  index (userid),
-  
+  profile_pic VARCHAR(255),
   hashedp char(60),
+    index (userid),
   unique(username),
   index(username)
-
 )
 ENGINE = InnoDB;
 
@@ -109,4 +108,3 @@ CREATE TABLE QA (
     on update cascade
 )
 ENGINE = InnoDB;
-

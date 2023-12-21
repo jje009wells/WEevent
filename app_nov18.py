@@ -205,9 +205,11 @@ def profile(profile_user_id=None):
     elif usertype.get('usertype') == 'personal':
         # Fetch personal account details and render the personal user profile template
         user = helpers_nov18.get_user_by_userid(conn, profile_user_id)
+        profile_pic_url = helpers_nov18.get_profile_picture(conn, profile_user_id)
+        print(profile_pic_url)
         events_created = helpers_nov18.get_events_by_user(conn, profile_user_id, current_user_id)
         events_attending = helpers_nov18.get_eventsid_attending(conn,profile_user_id)
-        return render_template('user_profile.html', page_title='User Profile', user=user, events_created = events_created, events_attending = events_attending)
+        return render_template('user_profile.html', page_title='User Profile', user=user, profile_pic_url=profile_pic_url, events_created = events_created, events_attending = events_attending)
 
 @app.route('/follow/<int:followed>/', methods=['POST'])
 def follow(followed):
@@ -252,34 +254,32 @@ def unfollow(followed):
     flash(f'''You unfollowed {orgname}''')
     return redirect(url_for('profile', profile_user_id = followed))
 
-@app.route('/view_following/<int:profile_userid>/', methods=['GET', 'POST'])
-def view_following(profile_userid): 
+@app.route('/view_following/<int:profile_userid>/', methods=['GET'])
+def view_following(profile_userid):
     '''
     Renders a page that displays the orgs a personal user is following
     and allows the user to search for orgs to follow
     '''
-    conn = dbi.connect()
     current_userid = session.get('uid')
-    user = helpers_nov18.get_user_by_userid(conn,profile_userid)
-
-    #if user is logged in
-    if profile_userid and current_userid: 
-        #if a search was made, want to list both the search results and orgs followed
-        followed_orgs = helpers_nov18.get_followed_orgs(conn, profile_userid)
-        for org in followed_orgs:
-            org['is_following'] = helpers_nov18.is_following(conn, current_userid, org['userid'])
-        if request.method == 'POST':
-            search_term = request.form.get('org_name')
-            search_results = helpers_nov18.search_orgs_by_keyword(conn, search_term)
-            return render_template('followed_orgs.html', page_title='Followed Orgs', search_results=search_results, followed_orgs=followed_orgs, user= user)
-        #if no search was made, just list the orgs followed
-        else: 
-            return render_template('followed_orgs.html', page_title='Followed Orgs', followed_orgs=followed_orgs, user= user)
-
-    #if user is not logged in, flash a message and redirect to login
-    else: 
-        flash('Please login first.')
+     
+    #check if the user is logged in
+    if current_userid is None:
+        flash('Please log in to follow organizations.')
         return redirect(url_for('login'))
+    
+    conn = dbi.connect()
+    user = helpers_nov18.get_user_by_userid(conn, profile_userid)
+    org_name = request.args.get('org_name')
+    followed_orgs = helpers_nov18.get_followed_orgs(conn, profile_userid)
+
+    #if the search term is provided, perform  search and show both followed orgs and search results
+    if org_name:
+        search_results = helpers_nov18.search_orgs_by_keyword(conn, org_name)
+        return render_template('followed_orgs.html', page_title='Followed Orgs', search_results=search_results, followed_orgs=followed_orgs, user=user)
+
+    #if no search was made, just show the followed orgs
+    return render_template('followed_orgs.html', page_title='Followed Orgs', followed_orgs=followed_orgs, user=user)
+
 
 # @app.route('/view_following/', methods=['GET', 'POST'])
 # def view_following(): 
@@ -484,6 +484,10 @@ def register():
             flash('Passwords do not match.')
             return redirect(url_for('register'))
 
+        # Set default profile picture path
+        default_profile_pic = 'static/images/Default_profile_image.png'
+        userInfo['profile_pic'] = default_profile_pic
+
         # Insert user
         conn = dbi.connect()
         uid, is_dup, other_err = weeventlogin.insert_user(conn, userInfo)
@@ -499,6 +503,7 @@ def register():
         session['username'] = userInfo['username']
         session['uid'] = uid
         session['usertype'] = userInfo['user_type']
+        session['userProfilePic'] = userInfo['profile_pic']
         # Redirect to profile or another post-registration page
         return redirect(url_for('index'))  # Replace 'index' with your post-registration page
 
@@ -532,6 +537,9 @@ def login():
             usertype = helpers_nov18.get_usertype(conn,uid)
             usertype = usertype.get('usertype')
             session['usertype'] = usertype
+            profile_pic = helpers_nov18.get_profile_picture(conn, uid)
+            profile_pic = profile_pic.get('profile_pic')
+            session['userProfilePic'] = profile_pic
             #session['email'] = accountInfo.get('email')
             #session['visits'] = 1 #don't think we need to keep track of this?
             return redirect( url_for('index') )
@@ -589,49 +597,53 @@ def rsvp(event_id):
     return redirect(url_for('event', event_id=event_id, registration_status=registration_status))
 
 
-@app.route('/account_management/', methods=['GET','POST'])
+@app.route('/account_management/', methods=['GET', 'POST'])
 def account_management():
-    '''
-    Shows a form for updating your account
-    On POST does the update and shows the form again.
-    '''
     if session.get('uid') is None:
         flash("You are not logged in, please log in to update your account info!")
         return redirect(url_for('login'))
     else:
         conn = dbi.connect()
-        #make sure they can also get org info!!!
-        print('the user type is ', helpers_nov18.get_usertype(conn,session.get('uid')))
-        if helpers_nov18.get_usertype(conn,session.get('uid')).get('usertype') == 'org':
-            print('I should be getting org userinfo')
+        if helpers_nov18.get_usertype(conn, session.get('uid')).get('usertype') == 'org':
             userInfo = helpers_nov18.get_org_by_userid(conn, session.get('uid'))
         else:
             userInfo = helpers_nov18.get_account_info(conn, session.get('uid'))
+
         if request.method == 'POST':
-            if request.form.get('submit') == 'update_pass':
-                passwd1 = request.form.get('password1')
-                passwd2 = request.form.get('password2')
+            formInfo = request.form.to_dict()
+
+            # Handle password update
+            if formInfo.get('submit') == 'update_pass':
+                passwd1 = formInfo.get('password1')
+                passwd2 = formInfo.get('password2')
                 if passwd1 != passwd2:
-                    flash('passwords do not match')
-                    return redirect( url_for('account_management'))
+                    flash('Passwords do not match')
+                    return redirect(url_for('account_management'))
                 else:
-                    conn = dbi.connect()
                     helpers_nov18.update_password(conn, passwd1, session.get('uid'))
                     flash("Password was updated! Returning to your profile. Please keep track of new password")
-                    return redirect( url_for('profile') )
-            else:
-                formInfo = request.form.to_dict()
-                print('form info is', formInfo)
+                    return redirect(url_for('profile'))
 
-                newAccountDict = helpers_nov18.update_account(conn, formInfo, session.get('uid'))
-                print('the newAccountDict, after updating is, ', newAccountDict)
-                session['username'] = newAccountDict.get('username')
-                flash('Account info updated. Returning to your profile')
-                return redirect( url_for('profile') )
-        else: # GET method
-            print('userInfo, which will be rendered on a GET, is', userInfo)
-            return render_template('update_account.html', page_title='Update Your Account', userInfo = userInfo)
+            # Handle profile picture upload
+            profile_pic_file = request.files['profile_pic']
+            if profile_pic_file and profile_pic_file.filename != '':
+                filename = secure_filename(profile_pic_file.filename)
+                profile_pic_path = os.path.join(app.config['UPLOADS'], filename)
+                session['userProfilePic'] = profile_pic_path
+                profile_pic_file.save(profile_pic_path)
+                #formInfo['profile_pic'] = profile_pic_path
+                helpers_nov18.update_profile_picture(conn, session.get('uid'), profile_pic_path)
+                session['userProfilePic'] = profile_pic_path
+            #else:
+                #formInfo['profile_pic'] = None
 
+            flash('Account info updated. Returning to your profile')
+            return redirect(url_for('profile'))
+
+        else:  # GET method
+            return render_template('update_account.html', page_title='Update Your Account', userInfo=userInfo)
+
+       
 @app.route('/ask_question/<int:event_id>', methods=['POST'])
 def ask_question(event_id):
     if session.get('uid') is None:

@@ -12,10 +12,10 @@ def insert_user(conn, userInfo, verbose=False):
     curs = dbi.cursor(conn)
     try:
         # Insert into the account table
-        curs.execute('''INSERT INTO account (usertype, username, email, hashedp) 
-                        VALUES(%s, %s, %s, %s)''',
-                     [userInfo.get('user_type'), userInfo.get('username'),
-                      userInfo.get('email'), hashed.decode('utf-8')])
+        curs.execute('''INSERT INTO account (usertype, username, email, hashedp, profile_pic) 
+                VALUES(%s, %s, %s, %s, %s)''',
+             [userInfo.get('user_type'), userInfo.get('username'),
+              userInfo.get('email'), hashed.decode('utf-8'), userInfo.get('profile_pic')])
         
         # Get the last insert id
         curs.execute('select last_insert_id()')

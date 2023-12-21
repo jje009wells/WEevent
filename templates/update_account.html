@@ -6,6 +6,12 @@
 
     <!-- maybe make it so they have to type in current password -->
     {% if userInfo.usertype == 'personal' %}
+    <form id="update_profile_pic" action="{{url_for('account_management')}}" method="post" enctype="multipart/form-data" class="form-style">
+        <h2>Profile Picture Update</h2>
+        <p><label for="profile_pic">Profile Picture:</label>
+        <input type="file" name="profile_pic" id="profile_pic" accept="image/*"></p>
+        <p><button type="submit" name="submit" value="update_profile_pic">Upload Picture</button></p>
+    </form>
     <form id="update_personal" action="{{url_for('account_management')}}" method="post" class="form-style">
         <h2>Account Update</h2>
         <p><label>New Username: <input type="text" name="username" pattern="^\w+$" value = '{{userInfo.username}}'></label></p>
@@ -13,6 +19,12 @@
         <p><button type="submit" name="submit" value="update_personal">Submit</button></p>
     </form>
     {% else %}
+    <form id="update_profile_pic" action="{{url_for('account_management')}}" method="post" enctype="multipart/form-data" class="form-style">
+        <h2>Profile Picture Update</h2>
+        <p><label for="profile_pic">Profile Picture:</label>
+        <input type="file" name="profile_pic" id="profile_pic" accept="image/*"></p>
+        <p><button type="submit" name="submit" value="update_profile_pic">Upload Picture</button></p>
+    </form>
     <form id="update_org" action="{{url_for('account_management')}}" method="post" class="form-style">
         <h2>Account Update</h2>
         <p><label>Organization Name: <input type="text" name="username" value = '{{userInfo.username}}'></label></p>
