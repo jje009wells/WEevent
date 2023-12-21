@@ -161,7 +161,9 @@ $(document).ready(function() {
                   <p class="event-detail evnet-date">{{ event.formatted_date }} from {{ event.formatted_starttime }} to {{ event.formatted_endtime }}</p>
                   <p class="event-detail event-loc">{{ event.eventloc }}</p>
                   <p class="event-detail event-host">By <a href="{{ url_for('profile', profile_user_id=event.userid) }}">{{ event.username }}</a></p>
-                  <p class="event-detail event-att">{{ event.numattendee}} people attending</p>
+                  {% if event.rsvp == 'yes'%}
+                    <p class="event-detail event-att">{{ event.numattendee}} people attending</p>
+                  {% endif %}
                   <div class="event-actions">
                     {% if session.uid and session.usertype == 'personal' and session.uid != event.userid %}
                       <form action="{{ url_for('rsvp', event_id=event.eventid) }}" method="post">

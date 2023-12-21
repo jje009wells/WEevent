@@ -242,6 +242,17 @@ def insert_event_image(conn, event_id, pathname):
     Inserts pathname into the spam column a newly created event using last_insert_id
     '''
     curs = dbi.dict_cursor(conn)
+    
+    curs.execute(
+        '''
+        select spam from eventcreated where eventid = %s;
+        ''', [event_id]
+    )
+    current_spam = curs.fetchone()
+    print(current_spam)
+    if current_spam.get('spam') is not None:
+        os.remove(current_spam.get('spam'))
+
     curs.execute(
         ''' 
         update eventcreated set spam = %s where eventid = %s;
