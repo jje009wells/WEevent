@@ -603,16 +603,6 @@ def update_account(conn, formData, userID):
                 """, [eboard, org_info, userID]
             )
 
-    # Update profile picture if provided
-    if profile_pic:
-        curs.execute(
-            """
-            UPDATE account
-            SET profile_pic = %s
-            WHERE userid = %s;
-            """, [profile_pic, userID]
-        )
-
     conn.commit()
     accountDict = get_account_info(conn, userID)
     return accountDict

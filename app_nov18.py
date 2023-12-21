@@ -610,38 +610,46 @@ def account_management():
             userInfo = helpers_nov18.get_account_info(conn, session.get('uid'))
 
         if request.method == 'POST':
+            submit_type = request.form.get('submit')
             formInfo = request.form.to_dict()
 
             # Handle password update
-            if formInfo.get('submit') == 'update_pass':
+            if submit_type == 'update_pass':
                 passwd1 = formInfo.get('password1')
                 passwd2 = formInfo.get('password2')
                 if passwd1 != passwd2:
                     flash('Passwords do not match')
                     return redirect(url_for('account_management'))
-                else:
-                    helpers_nov18.update_password(conn, passwd1, session.get('uid'))
-                    flash("Password was updated! Returning to your profile. Please keep track of new password")
+               
+                helpers_nov18.update_password(conn, passwd1, session.get('uid'))
+                flash("Password was updated! Returning to your profile. Please keep track of new password")
+                return redirect(url_for('profile'))
+
+            elif submit_type == 'update_personal' or submit_type == 'update_org':
+                print("IM GETTING INSIDE UPDATE ACCOUNT IF")
+                # Account update logic for both personal and org accounts
+                username = request.form['username']
+                email = request.form['email']
+                newAccountDict = helpers_nov18.update_account(conn, formInfo, session.get('uid'))
+                session['username'] = newAccountDict.get('username')
+
+                flash('Account info updated. Returning to your profile')
+                return redirect(url_for('profile'))
+
+            elif submit_type == 'update_profile_pic':
+                # Profile picture upload logic
+                profile_pic_file = request.files['profile_pic']
+                if profile_pic_file and profile_pic_file.filename != '':
+                    filename = secure_filename(profile_pic_file.filename)
+                    profile_pic_path = os.path.join(app.config['UPLOADS'], filename)
+                    profile_pic_file.save(profile_pic_path)
+                    helpers_nov18.update_profile_picture(conn, session.get('uid'), profile_pic_path)
+                    session['userProfilePic'] = profile_pic_path
+                    flash('Profile picture updated. Returning to your profile')
                     return redirect(url_for('profile'))
 
-            # Handle profile picture upload
-            profile_pic_file = request.files['profile_pic']
-            if profile_pic_file and profile_pic_file.filename != '':
-                filename = secure_filename(profile_pic_file.filename)
-                profile_pic_path = os.path.join(app.config['UPLOADS'], filename)
-                session['userProfilePic'] = profile_pic_path
-                profile_pic_file.save(profile_pic_path)
-                #formInfo['profile_pic'] = profile_pic_path
-                helpers_nov18.update_profile_picture(conn, session.get('uid'), profile_pic_path)
-                session['userProfilePic'] = profile_pic_path
-            #else:
-                #formInfo['profile_pic'] = None
-
-            flash('Account info updated. Returning to your profile')
-            return redirect(url_for('profile'))
-
-        else:  # GET method
-            return render_template('update_account.html', page_title='Update Your Account', userInfo=userInfo)
+    # Default GET request or if no POST conditions are met
+    return render_template('update_account.html', page_title='Update Your Account', userInfo=userInfo)
 
        
 @app.route('/ask_question/<int:event_id>', methods=['POST'])
