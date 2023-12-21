@@ -280,7 +280,6 @@ def view_following(profile_userid):
     #if no search was made, just show the followed orgs
     return render_template('followed_orgs.html', page_title='Followed Orgs', followed_orgs=followed_orgs, user=user)
 
-
 @app.route('/filter_events/', methods=['GET', 'POST'])
 def filter_events():
     '''
@@ -302,13 +301,14 @@ def filter_events():
         conn = dbi.connect()
 
         #fetch the events that match the filters via a helper function
-        events = helpers_nov18.get_filtered_events(conn, filters,userid)
+        events = helpers_nov18.get_filtered_events(conn, filters, userid)
         upcoming_events = helpers_nov18.get_upcoming_events(events)
         return render_template('all_events.html', page_title='All Events', events=events, filters=filters,upcoming_events= upcoming_events)
             
     else:
         #if get request, load all events/homepage
         return redirect(url_for('index'))
+
 
 # @app.route('/search_events/', methods=['GET', 'POST'])
 # def search_events():
@@ -343,7 +343,7 @@ def search_events():
     if search_term:
         conn = dbi.connect()
         userid = session.get('uid')
-        # fetch events whose eventname contains the search term via a helper function
+        #fetch events whose eventname contains the search term via a helper function
         events = helpers_nov18.search_events(conn, search_term, userid=userid)
         upcoming_events = helpers_nov18.get_upcoming_events(events)
         return render_template('all_events.html', page_title='All Events', events=events, search_term=search_term, upcoming_events=upcoming_events)
