@@ -7,10 +7,19 @@ import cs304dbi as dbi
 import os, bcrypt
 
 #########  helpers related to getting events ######### 
+
 def timedelta_to_time(td):
+    '''
+    Converts a timedelta object to a time object.
+    Useful for converting the time stored in the database to a standard time format.
+    '''
     return (datetime.min + td).time()
 
 def formate_date(event):
+    '''
+    Formats the date and time of an event for display.
+    Adds formatted date and time to the event dictionary.
+    '''
     event['formatted_date'] = event['eventdate'].strftime('%b %-d, %Y')
     start_time = timedelta_to_time(event['starttime'])
     end_time = timedelta_to_time(event['endtime'])
@@ -20,12 +29,13 @@ def formate_date(event):
 
 def get_events_by_user(conn, profile_userid, current_user_id):
     """
-    Gets all events created by a specific user. 
-    Used for displaying events that a user manages. 
+    Retrieves all events created by a specific user.
+    Used for displaying events that a user manages.
+    Includes RSVP information if the current user has RSVPed to the events.
     """
     curs = dbi.dict_cursor(conn)
     
-    #select * here as all columns are needed for rendering
+    # Select * here as all columns are needed for rendering
     curs.execute(
         """
         select ec.eventid, ec.organizerid, ec.eventname, ec.eventtype, ec.shortdesc,
@@ -50,15 +60,15 @@ def get_events_by_user(conn, profile_userid, current_user_id):
 
 def get_homepage_events(conn, user_id=None):
     '''
-    Gets all events in the database. 
+    Retrieves all events in the database.
     Used for viewing all events, filtering, and searching.
+    Includes RSVP information if a user ID is provided.
     '''
     curs = dbi.dict_cursor(conn)
     if user_id is None:
         # If no user ID is provided, return events without RSVP information
         
-        # select * here as all columns are needed for rendering 
-        
+        # Select * here as all columns are needed for rendering 
         curs.execute('''
             select ec.eventid, ec.organizerid, ec.eventname, ec.eventtype, ec.shortdesc,
             ec.eventdate, ec.starttime, ec.endtime, ec.eventloc, ec.rsvp, ec.eventtag, ec.fulldesc,
@@ -88,7 +98,7 @@ def get_homepage_events(conn, user_id=None):
 
 def get_upcoming_events(events):
     '''
-    Filters upcoming events from a list of events.
+    Filters and returns upcoming events from a list of events.
     An event is considered upcoming if its date is equal to or greater than the current date.
     '''
     now = datetime.now().date()
@@ -97,8 +107,13 @@ def get_upcoming_events(events):
 
 
 def get_event_by_id(conn, event_id, userid):
+    '''
+    Retrieves a specific event by its ID.
+    Includes RSVP information and a list of attendees.
+    Formats the event date and time for display.
+    '''
     curs = dbi.dict_cursor(conn)
-    # select * here as all columns are needed for rendering
+    # Select * here as all columns are needed for rendering
     curs.execute(
         '''
         select ec.eventid, ec.organizerid, ec.eventname, ec.eventtype, ec.shortdesc,
@@ -119,8 +134,8 @@ def get_event_by_id(conn, event_id, userid):
 
 def get_org_by_userid(conn, userid):
     '''
-    Gets specfics org info of an org by their userid.
-    Used for Org Profile. 
+    Retrieves specific organization information by the user ID.
+    Used for displaying organization profiles.
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
@@ -134,8 +149,9 @@ def get_org_by_userid(conn, userid):
 
 def get_user_by_userid(conn,userid):
     '''
-    Gets specfics info of a user by their userid.
-    Used for User Profile. 
+    Retrieves specific information of a user by their user ID.
+    Used for displaying user profiles.
+    Includes the count of organizations followed by the user.
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
@@ -160,8 +176,8 @@ def get_user_by_userid(conn,userid):
 
 def get_eventsid_attending(conn, userid):
     '''
-    Gets events user RSVPed to by userid.
-    Used for User Profile. 
+    Retrieves events that a user has RSVPed to by their user ID.
+    Used for displaying events on a user's profile.
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
@@ -192,24 +208,25 @@ def insert_event_data(conn, organizer_id, username, user_email, event_name,
                         contact_email, pathname):
     curs = dbi.dict_cursor(conn)
     '''
-    Inserts event information into the database.
-    Returns the event_id of the inserted event. This is useful for inserting spam for a new event. 
+    Inserts new event information into the database.
+    Handles the creation of a new organizer if not already existing.
+    Returns the event ID of the newly inserted event.
     '''
-    #check if the organizer-id already exists
+    # Check if the organizer-id already exists
     curs.execute("select userid from account where userid = %s", [organizer_id])
     existing_organizer = curs.fetchone()
 
     if existing_organizer is None:
-        #if organizer does not exist, insert into the account table
+        # If organizer does not exist, insert into the account table
         curs.execute(
             '''
             INSERT INTO account (userid, usertype, username, email)
             VALUES (%s, %s, %s, %s);
             ''', [organizer_id, event_type, username, user_email]
         )
-    #make no changes if the organizer already exists
+    # Make no changes if the organizer already exists
 
-    #insert event information into the events table 
+    # Insert event information into the events table 
     curs.execute( 
         '''
         insert into eventcreated(organizerid, eventname, eventtype, shortdesc, eventdate, starttime, endtime, eventloc, rsvp, eventtag, fulldesc, contactemail, spam, numattendee)
@@ -226,7 +243,8 @@ def insert_event_data(conn, organizer_id, username, user_email, event_name,
 
 def insert_event_image(conn, event_id, pathname):
     '''
-    Inserts pathname into the spam column a newly created event using last_insert_id
+    Updates the event record with the pathname of the event image.
+    Used for adding or updating an image for an event.
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
@@ -239,7 +257,7 @@ def insert_event_image(conn, event_id, pathname):
 ######### helpers related to following orgs ######### 
 def get_usertype(conn, userid):
     '''
-    Gets usertype by userid
+    Retrieves the user type (e.g., personal, organization) by user ID.
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
@@ -250,7 +268,8 @@ def get_usertype(conn, userid):
 
 def follow(conn, userid, orgid):
     '''
-    Allow User follow org
+    Allows a user to follow an organization.
+    Adds a record to the person_interest table.
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
@@ -260,9 +279,10 @@ def follow(conn, userid, orgid):
     conn.commit()
 
 def unfollow(conn, userid, orgid):
-    """
-    Removes followed org by orgid from user's person_interest table
-    """
+    '''
+    Allows a user to unfollow an organization.
+    Removes the corresponding record from the person_interest table.
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
         """
@@ -273,6 +293,10 @@ def unfollow(conn, userid, orgid):
     conn.commit()
 
 def is_following(conn, follower, followed):
+    '''
+    Checks if a user (follower) is following a specific organization (followed).
+    Returns True if following, False otherwise.
+    '''
     curs = dbi.cursor(conn)
     curs.execute('''SELECT COUNT(*) FROM person_interest
                     WHERE follower = %s AND followed = %s''',
@@ -281,7 +305,9 @@ def is_following(conn, follower, followed):
     return count > 0
 
 def search_orgs_by_keyword(conn, search_term):
-    '''Gets a list of orgs that match a search term
+    '''
+    Retrieves a list of organizations that match a given search term.
+    Used for searching organizations by name.
     '''
     curs = dbi.dict_cursor(conn)
     query = '''select org_account.userid, account.username
@@ -294,17 +320,12 @@ def search_orgs_by_keyword(conn, search_term):
 ########  helpers related to filtering and searching ######### 
 def get_filtered_events(conn, filters,userid):
     '''
-    Gets events matching certain filters
+    Retrieves events matching certain filters such as date, type, tags, and followed organizations.
+    Used for filtering events on the homepage or other event listing pages.
     '''
     curs = dbi.dict_cursor(conn)
 
-    #sample final query: 
-    #select *
-    #    from eventcreated where 
-    #    eventdate = ... and eventtype = ... and (eventtag like ... or event tag like ...)
-    #want to build this up from individual strings
-    
-    #initilize list of parameters to replace %s
+    # Initilize list of parameters to replace %s
     if userid is None:
         query = '''
         select eventcreated.eventid, eventcreated.organizerid, eventcreated.eventname, eventcreated.eventtype, eventcreated.shortdesc,
@@ -327,8 +348,8 @@ def get_filtered_events(conn, filters,userid):
         parameters = [userid]
 
 
-    #first checks if the user used a date/type/tag/org_name filter at all
-    #if not, do not want it in the query
+    # First checks if the user used a date/type/tag/org_name filter at all
+    # If not, do not want it in the query
     if filters.get('date'):
         query += ' and eventdate = %s'
         parameters.append(filters['date']) #get user input 
@@ -338,25 +359,25 @@ def get_filtered_events(conn, filters,userid):
         parameters.append(filters['type'])
 
     if filters.get('org_name'):
-        #the event table does not have a column called org_name, it only has organizerid
-        #checks if the org_name matches the username in the account table, then select events 
-        #with a matching organizerid
+        # The event table does not have a column called org_name, it only has organizerid
+        # Checks if the org_name matches the username in the account table, then select events 
+        # with a matching organizerid
         query += ' and organizerid in (select userid from account where username LIKE %s)'
         parameters.append('%{}%'.format(filters['org_name']))
 
     tags_to_filter = filters.get('tags') #this is a list of tags inputted by the user
     if tags_to_filter: 
-        #note: if the user selects career and academic as their tags, 
-        #we assume that that the user wants to see events with the career tag or the academic tag
-        #(not events with the the career tag and the academic tag simultaneously)
+        # Note: if the user selects career and academic as their tags, 
+        # We assume that that the user wants to see events with the career tag or the academic tag
+        # (not events with the the career tag and the academic tag simultaneously)
         tag_conditions = []
 
-        #for each tag in the list, want to check if the eventtag colum contains that tag
+        # For each tag in the list, want to check if the eventtag colum contains that tag
         for tag in tags_to_filter: 
             tag_conditions.append("eventtag like %s")
             parameters.append('%{}%'.format(tag))
         
-        #assemble the final string 
+        # Assemble the final string 
         query += ' and (' + ' or '.join(tag_conditions) + ')'   
     
     if filters.get('orgs_following'):
@@ -376,7 +397,9 @@ def get_filtered_events(conn, filters,userid):
 
 def search_events(conn, search_term,userid = None):
     '''
-    Gets all events whose event names match a search term
+    Retrieves all events whose names match a given search term.
+    Includes RSVP information if a user ID is provided.
+    Used for searching events by name.
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute(''' 
@@ -399,12 +422,13 @@ def search_events(conn, search_term,userid = None):
 #########  helpers related to updating an event ######### 
 def update_event(conn, formData, eventID,userid):
     """
-    Updates event with info gathered info from form.
-    Returns the full updated event dictionary
+    Updates an event with information gathered from a form.
+    Returns the full updated event dictionary.
+    Used for modifying event details.
     """
     curs = dbi.dict_cursor(conn)
     
-    #update an event with new data
+    # Update an event with new data
     curs.execute(
         """
         update eventcreated
@@ -419,7 +443,9 @@ def update_event(conn, formData, eventID,userid):
     return eventDict
 
 def get_followed_orgs(conn, userid): 
-    '''Gets a list of orgs that a personal account is following
+    '''
+    Retrieves a list of organizations that a personal account is following.
+    Used for displaying followed organizations on a user's profile.
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
@@ -429,11 +455,11 @@ def get_followed_orgs(conn, userid):
             where person_interest.follower = %s;''', [userid])
     return curs.fetchall()
 
-#just gets info from account table, doesnt get personal or org specific data
 def get_account_info(conn, userID):
     """
-    Gets basic account info with the given account ID
-    This info includes userid, username, usertype, email, and profile picture (does not include hashed passwd)
+    Retrieves basic account information for a given user ID.
+    Includes user ID, username, user type, email, and profile picture.
+    Excludes sensitive information like hashed passwords.
     """
     curs = dbi.dict_cursor(conn)
     curs.execute(
@@ -447,6 +473,7 @@ def get_account_info(conn, userID):
 def update_profile_picture(conn, user_id, picture_path):
     """
     Updates the profile picture path for a user.
+    Used for changing a user's profile picture.
     """
     
     curs = dbi.dict_cursor(conn)
@@ -460,6 +487,7 @@ def update_profile_picture(conn, user_id, picture_path):
 def get_profile_picture(conn, user_id):
     """
     Retrieves the profile picture path for a user.
+    Used for displaying a user's profile picture.
     """
     curs = dbi.dict_cursor(conn)
     curs.execute('''
@@ -471,7 +499,8 @@ def get_profile_picture(conn, user_id):
 
 def delete_event(conn, eventID):
     """
-    Removes event with given id from the database
+    Removes an event with a given ID from the database.
+    Used for deleting events.
     """
     curs = dbi.dict_cursor(conn)
     curs.execute(
@@ -484,6 +513,10 @@ def delete_event(conn, eventID):
 
 ######### helpers related to rsvping ######### 
 def rsvp_required(conn, event_id):
+    '''
+    Checks if RSVP is required for a specific event.
+    Returns the RSVP requirement status.
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''select rsvp from eventcreated where eventid = %s
@@ -492,6 +525,10 @@ def rsvp_required(conn, event_id):
     return curs.fetchone()
 
 def user_rsvp_status(conn, event_id, user_id):
+    '''
+    Checks if a user has RSVPed to a specific event.
+    Returns the RSVP record if it exists.
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''
@@ -501,7 +538,10 @@ def user_rsvp_status(conn, event_id, user_id):
     return curs.fetchone() 
 
 def count_numattendee(conn, event_id):
-    '''count number of attendees after user rsvp'd'''
+    '''
+    Counts the number of attendees for a specific event.
+    Used after a user RSVPs to update the attendee count.
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''select count(participant) from registration where eventid = %s''', [event_id]
@@ -511,6 +551,11 @@ def count_numattendee(conn, event_id):
     return count
 
 def rsvp(conn, event_id, user_id):
+    '''
+    Adds an RSVP record for a user to an event.
+    Used when a user RSVPs to an event.
+    '''
+    
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''insert into registration (eventid, participant) values (%s, %s);
@@ -519,7 +564,9 @@ def rsvp(conn, event_id, user_id):
     conn.commit()
 
 def cancel_rsvp(conn, event_id, user_id):
-    '''Deletes a rsvp record from the resgitration table
+    '''
+    Deletes an RSVP record for a user from an event.
+    Used when a user cancels their RSVP.
     '''
     curs = dbi.dict_cursor(conn)
     curs.execute('delete from registration where eventid= %s and participant = %s;', [event_id, user_id])
@@ -527,6 +574,10 @@ def cancel_rsvp(conn, event_id, user_id):
     return "RSVP cancelled"
 
 def update_numattendee(conn,eventid,count):
+    '''
+    Updates the number of attendees for an event.
+    Used after a user RSVPs or cancels their RSVP.
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''update eventcreated set numattendee = %s where eventid = %s;''',[count,eventid]
@@ -535,24 +586,27 @@ def update_numattendee(conn,eventid,count):
     return 'updated number of attendees'
 
 def is_valid_filename(filename):
-    #filename pattern needs to match something like uploads/10_1700612634.png (id_timestamp.extension)
+    '''
+    Validates the format of a filename.
+    Ensures the filename follows a specific pattern (e.g., uploads/10_1700612634.png).
+    '''
+    # Filename pattern needs to match something like uploads/10_1700612634.png (id_timestamp.extension)
     parts = filename.split('_') 
     potential_uid = parts[0].split('/')[1]
     potential_timestamp = parts[1].split('.')[0]
 
-    #flash(f'{parts}')
-    #flash(f'{potential_uid}')
-    #flash(f'{potential_timestamp}')
-
-    #check if the filename has at least two parts
+    # Check if the filename has at least two parts
     if len(parts) != 2:
         return False
-    #check if the first and second parts are numbers
+    # Check if the first and second parts are numbers
     if not (potential_uid.isdigit() and potential_uid.isdigit()): 
         return False
     return True 
 
 def get_rsvp_info(conn, event_id):
+    '''
+    Retrieves RSVP information for an event, including user details of attendees.
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute(
         '''select eventid, userid, username, email from registration 
@@ -565,9 +619,9 @@ def get_rsvp_info(conn, event_id):
 ######### helpers related to changing account information ######### 
 def update_account(conn, formData, userID):
     """
-    Updates account with info gathered from form, including the profile picture.
-    Allows updating username, email, and profile picture independently.
-    Returns the full updated account dictionary.
+    Updates account information based on form data.
+    Handles updates for both personal and organization accounts.
+    Returns the updated account information.
     """
     curs = dbi.dict_cursor(conn)
     username = formData.get('username')
@@ -609,14 +663,14 @@ def update_account(conn, formData, userID):
 
 def update_password(conn, passwd, userID):
     """
-    Updates account with info gathered info from form.
-    Returns the full updated account dictionary
+    Updates the password for a user account.
+    Hashes the new password before storing it in the database.
     """
     curs = dbi.dict_cursor(conn)
     hashed = bcrypt.hashpw(passwd.encode('utf-8'),
                            bcrypt.gensalt())
     
-    #update an account with new data
+    # Update an account with new data
     curs.execute(
         """
         update account
@@ -628,6 +682,11 @@ def update_password(conn, passwd, userID):
 
 ######### helpers related to Q&A feature #########
 def insert_question(conn, event_id, user_id, question_content):
+    '''
+    Inserts a new question into the QA table for a specific event.
+    Parameters include the event ID, user ID of the questioner, and the question content.
+    The question date is automatically set to the current time.
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute('''
         INSERT INTO QA (eventid, userid, question, questionDate)
@@ -636,6 +695,11 @@ def insert_question(conn, event_id, user_id, question_content):
     conn.commit()
 
 def get_qa(conn,event_id):
+    '''
+    Retrieves all questions and answers for a specific event.
+    Includes user information for each question.
+    Parameters include the event ID.
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute('''
         select QA.QAID, QA.eventid, QA.userid, QA.question, QA.answer, QA.questionDate, QA.answerDate,
@@ -644,6 +708,11 @@ def get_qa(conn,event_id):
     return curs.fetchall()
 
 def insert_answer(conn, qa_id, organization_id, answer_content):
+    '''
+    Updates a question in the QA table with an answer from an organization.
+    Parameters include the QA ID, organization ID, and the answer content.
+    The answer date is automatically set to the current time.
+    '''
     curs = dbi.dict_cursor(conn)
     curs.execute('''
         UPDATE QA

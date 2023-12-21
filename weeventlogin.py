@@ -3,9 +3,16 @@ import pymysql
 import bcrypt
 
 def insert_user(conn, userInfo, verbose=False):
-    '''inserts given user info into the account and respective tables.
-    Returns three values: the uid, whether there was a duplicate key error,
-    and either false or an exception object.
+    '''
+    Inserts a new user into the database based on the provided user information.
+    Parameters:
+        conn: Database connection object
+        userInfo: Dictionary containing user information
+        verbose: Boolean flag for verbose output (default: False)
+    Returns:
+        uid: User ID of the newly inserted user or False if an error occurred
+        is_dup: Boolean indicating if a duplicate key error occurred
+        other_err: False if no error, or the exception object if an error occurred
     '''
     hashed = bcrypt.hashpw(userInfo.get('password1').encode('utf-8'),
                            bcrypt.gensalt())
@@ -51,16 +58,22 @@ def insert_user(conn, userInfo, verbose=False):
 
 
 def login_user(conn, username, password):
-    '''tries to log the user in given username & password. 
-Returns True if success and returns the uid as the second value and the account email as the third value.
-Otherwise, False, False.'''
+    '''
+    Attempts to log in a user with the given username and password.
+    Parameters:
+        conn: Database connection object
+        username: Username of the user attempting to log in
+        password: Password of the user attempting to log in
+    Returns:
+        True and the user ID if login is successful, False and False otherwise.
+    '''
     curs = dbi.cursor(conn)
     curs.execute('''SELECT userid, hashedp FROM account 
                     WHERE username = %s''',
                  [username])
     row = curs.fetchone()
     if row is None:
-        # no such user
+        # No such user
         return (False, False)
     uid, hashed = row
     hashed2_bytes = bcrypt.hashpw(password.encode('utf-8'),
@@ -69,10 +82,16 @@ Otherwise, False, False.'''
     if hashed == hashed2:
         return (True, uid)
     else:
-        # password incorrect
+        # Password incorrect
         return (False, False)
 
 def delete_user(conn, id):
+    '''
+    Deletes a user from the database based on the user ID.
+    Parameters:
+        conn: Database connection object
+        id: User ID of the user to be deleted
+    '''
     curs = dbi.cursor(conn)
     curs.execute('''DELETE FROM account WHERE userid = %s''',
                  [id])
