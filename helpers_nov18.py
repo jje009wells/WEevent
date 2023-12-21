@@ -12,24 +12,11 @@ def timedelta_to_time(td):
 
 def formate_date(event):
     event['formatted_date'] = event['eventdate'].strftime('%b %-d, %Y')
-
-    # Convert timedelta to time for start and end times
     start_time = timedelta_to_time(event['starttime'])
     end_time = timedelta_to_time(event['endtime'])
-
-    # Check if minutes are zero, and format accordingly
-    if start_time.minute == 0:
-        event['formatted_starttime'] = start_time.strftime('%-I%p').lower()
-    else:
-        event['formatted_starttime'] = start_time.strftime('%-I:%M%p').lower()
-
-    if end_time.minute == 0:
-        event['formatted_endtime'] = end_time.strftime('%-I%p').lower()
-    else:
-        event['formatted_endtime'] = end_time.strftime('%-I:%M%p').lower()
-
+    event['formatted_starttime'] = start_time.strftime('%-I%p').lower().replace(':00', '')
+    event['formatted_endtime'] = end_time.strftime('%-I:%M%p').lower().replace(':00', '')
     return event
-
 
 def get_events_by_user(conn, profile_userid, current_user_id):
     """
@@ -242,17 +229,6 @@ def insert_event_image(conn, event_id, pathname):
     Inserts pathname into the spam column a newly created event using last_insert_id
     '''
     curs = dbi.dict_cursor(conn)
-    
-    curs.execute(
-        '''
-        select spam from eventcreated where eventid = %s;
-        ''', [event_id]
-    )
-    current_spam = curs.fetchone()
-    print(current_spam)
-    if current_spam.get('spam') is not None:
-        os.remove(current_spam.get('spam'))
-
     curs.execute(
         ''' 
         update eventcreated set spam = %s where eventid = %s;
@@ -350,7 +326,6 @@ def get_filtered_events(conn, filters,userid):
         '''
         parameters = [userid]
 
-    #always start with select select * from eventcreated where...
 
     #first checks if the user used a date/type/tag/org_name filter at all
     #if not, do not want it in the query
@@ -366,9 +341,9 @@ def get_filtered_events(conn, filters,userid):
         #the event table does not have a column called org_name, it only has organizerid
         #checks if the org_name matches the username in the account table, then select events 
         #with a matching organizerid
-        query += ' and organizerid in (select userid from account where username = %s)'
-        parameters.append(filters['org_name'])
-    
+        query += ' and organizerid in (select userid from account where username LIKE %s)'
+        parameters.append('%{}%'.format(filters['org_name']))
+        
     tags_to_filter = filters.get('tags') #this is a list of tags inputted by the user
     if tags_to_filter: 
         #note: if the user selects career and academic as their tags, 
