@@ -4,8 +4,8 @@
   <div class="org-details-container">
     <div class="profile-container">
       <div class="profile-image">
-        {% if session.userProfilePic.startswith('uploads/') %}
-          {% set filename = session.userProfilePic.split('/')[-1] %}
+        {% if org.profile_pic.startswith('uploads/') %}
+          {% set filename = org.profile_pic.split('/')[-1] %}
             <img src="{{ url_for('uploads', filename=filename) }}" alt="User Profile Image" class="Profile image">
         {% else %}
           <img src="{{ url_for('static', filename='images/Default_profile_image.png') }}" alt="Profile image">

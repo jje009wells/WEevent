@@ -223,12 +223,13 @@ def follow(followed):
         return redirect(url_for('login'))
 
     # Check the user type
+    conn = dbi.connect()
+
     usertype = helpers_nov18.get_usertype(conn, userid)
     if usertype is None or usertype.get('usertype') != 'personal':
         flash('Only personal users can follow organizations.')
         return redirect(url_for('index'))
     
-    conn = dbi.connect()
     helpers_nov18.follow(conn,userid,followed)
     orgname = helpers_nov18.get_org_by_userid(conn,followed)
     orgname = orgname.get('username')
@@ -281,6 +282,32 @@ def view_following(profile_userid):
     else: 
         flash('Please login first.')
         return redirect(url_for('login'))
+
+# @app.route('/view_following/', methods=['GET', 'POST'])
+# def view_following(): 
+#     '''
+#     Renders a page that displays the orgs a personal user is following
+#     and allows the user to search for orgs to follow
+#     '''
+#     conn = dbi.connect()
+#     userid = session.get('uid')
+
+#     #if user is logged in
+#     if userid: 
+#         #if a search was made, want to list both the search results and orgs followed
+#         followed_orgs = helpers_nov18.get_followed_orgs(conn, userid)
+#         if request.method == 'POST':
+#             search_term = request.form.get('org_name')
+#             search_results = helpers_nov18.search_orgs_by_keyword(conn, search_term)
+#             return render_template('followed_orgs.html', search_results=search_results, followed_orgs=followed_orgs)
+#         #if no search was made, just list the orgs followed
+#         else: 
+#             return render_template('followed_orgs.html', followed_orgs=followed_orgs)
+
+#     #if user is not logged in, flash a message and redirect to login
+#     else: 
+#         flash('Please login first.')
+#         return redirect(url_for('login'))
 
 @app.route('/filter_events/', methods=['GET', 'POST'])
 def filter_events():
