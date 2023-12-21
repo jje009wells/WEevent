@@ -254,34 +254,32 @@ def unfollow(followed):
     flash(f'''You unfollowed {orgname}''')
     return redirect(url_for('profile', profile_user_id = followed))
 
-@app.route('/view_following/<int:profile_userid>/', methods=['GET', 'POST'])
-def view_following(profile_userid): 
+@app.route('/view_following/<int:profile_userid>/', methods=['GET'])
+def view_following(profile_userid):
     '''
     Renders a page that displays the orgs a personal user is following
     and allows the user to search for orgs to follow
     '''
-    conn = dbi.connect()
     current_userid = session.get('uid')
-    user = helpers_nov18.get_user_by_userid(conn,profile_userid)
-
-    #if user is logged in
-    if profile_userid and current_userid: 
-        #if a search was made, want to list both the search results and orgs followed
-        followed_orgs = helpers_nov18.get_followed_orgs(conn, profile_userid)
-        for org in followed_orgs:
-            org['is_following'] = helpers_nov18.is_following(conn, current_userid, org['userid'])
-        if request.method == 'POST':
-            search_term = request.form.get('org_name')
-            search_results = helpers_nov18.search_orgs_by_keyword(conn, search_term)
-            return render_template('followed_orgs.html', page_title='Followed Orgs', search_results=search_results, followed_orgs=followed_orgs, user= user)
-        #if no search was made, just list the orgs followed
-        else: 
-            return render_template('followed_orgs.html', page_title='Followed Orgs', followed_orgs=followed_orgs, user= user)
-
-    #if user is not logged in, flash a message and redirect to login
-    else: 
-        flash('Please login first.')
+     
+    #check if the user is logged in
+    if current_userid is None:
+        flash('Please log in to follow organizations.')
         return redirect(url_for('login'))
+    
+    conn = dbi.connect()
+    user = helpers_nov18.get_user_by_userid(conn, profile_userid)
+    org_name = request.args.get('org_name')
+    followed_orgs = helpers_nov18.get_followed_orgs(conn, profile_userid)
+
+    #if the search term is provided, perform  search and show both followed orgs and search results
+    if org_name:
+        search_results = helpers_nov18.search_orgs_by_keyword(conn, org_name)
+        return render_template('followed_orgs.html', page_title='Followed Orgs', search_results=search_results, followed_orgs=followed_orgs, user=user)
+
+    #if no search was made, just show the followed orgs
+    return render_template('followed_orgs.html', page_title='Followed Orgs', followed_orgs=followed_orgs, user=user)
+
 
 # @app.route('/view_following/', methods=['GET', 'POST'])
 # def view_following(): 

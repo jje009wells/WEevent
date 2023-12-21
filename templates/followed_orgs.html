@@ -4,7 +4,7 @@
 <div class="followed-orgs-container">
   <h1>Following</h1>
   <div class="org-search-container">
-    <form action="{{ url_for('view_following', profile_userid = user.userid) }}" method="post" class="search-form">
+    <form action="{{ url_for('view_following', profile_userid = user.userid) }}" method="get" class="search-form">
       
       <div class="search-box">
         <input id="org_name" type="text" name="org_name" placeholder="Search org..." class="search-input" value="{{ search_term|default('') }}">
@@ -16,7 +16,19 @@
       </div>
     </form>
   </div>
+
+  {% if search_results %}
+    <p>Search Results</p>
+    <div class="org-list">
+      {% for org in search_results %}
+        <div class="org-item">
+          <p><a href="{{ url_for('profile', profile_user_id=org.userid) }}">{{ org.username }}</a></p>
+        </div>
+      {% endfor %}
+    {% endif %}
+
     {% if followed_orgs %}
+      <p>Followed Organizations</p>
       <div class = "org-list">
         {% for org in followed_orgs %}
           <div class="org-item">
@@ -41,3 +53,5 @@
 </div>
 
 {% endblock %}
+
+
