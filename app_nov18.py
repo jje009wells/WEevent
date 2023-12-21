@@ -599,7 +599,8 @@ def rsvp(event_id):
 
 @app.route('/account_management/', methods=['GET', 'POST'])
 def account_management():
-    if session.get('uid') is None:
+    uid = session.get('uid')
+    if uid is None:
         flash("You are not logged in, please log in to update your account info!")
         return redirect(url_for('login'))
     else:
@@ -640,13 +641,21 @@ def account_management():
                 # Profile picture upload logic
                 profile_pic_file = request.files['profile_pic']
                 if profile_pic_file and profile_pic_file.filename != '':
-                    filename = secure_filename(profile_pic_file.filename)
-                    profile_pic_path = os.path.join(app.config['UPLOADS'], filename)
-                    profile_pic_file.save(profile_pic_path)
-                    helpers_nov18.update_profile_picture(conn, session.get('uid'), profile_pic_path)
-                    session['userProfilePic'] = profile_pic_path
-                    flash('Profile picture updated. Returning to your profile')
-                    return redirect(url_for('profile'))
+                    try:
+                        nm = int(uid) # may throw error
+                        user_filename = profile_pic_file.filename
+                        ext = user_filename.split('.')[-1]
+                        timestamp = int(time.time()) 
+                        filename = secure_filename('{}_{}.{}'.format(nm,timestamp,ext))
+                        pathname = os.path.join(app.config['UPLOADS'],filename)
+                        profile_pic_file.save(pathname)
+                        helpers_nov18.update_profile_picture(conn, session.get('uid'), pathname)
+                        session['userProfilePic'] = pathname
+                        flash('Profile picture updated. Returning to your profile')
+                        return redirect(url_for('profile'))
+                    except Exception as err:
+                        flash('Upload failed {why}'.format(why=err))
+                        return render_template('update_account.html', page_title='Update Your Account', userInfo=userInfo)
 
     # Default GET request or if no POST conditions are met
     return render_template('update_account.html', page_title='Update Your Account', userInfo=userInfo)
